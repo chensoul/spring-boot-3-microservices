@@ -19,7 +19,7 @@
   <properties>
     <java.version>21</java.version>
 
-    <spotless-maven-plugin.version>2.44.1</spotless-maven-plugin.version>
+    <spotless-maven-plugin.version>2.44.2</spotless-maven-plugin.version>
   </properties>
 
   <dependencies>
