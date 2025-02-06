@@ -11,28 +11,24 @@
 
 ## 模块
 
-- Chapter00：Docker
-- Chapter01：Restful接口、持久化、SpringDoc OpenAPI
-- Chapter02：异步通信
-  - Chapter02-activemq
-  - Chapter02-kafka
-  - Chapter02-rabbitmq
-  - Chapter02-spring-cloud-stream
-- Chapter03：OpenFeign
-- Chapter04：服务发现 Eureka
-- Chapter05：服务网关 Spring Cloud Gateway
-- Chapter06：配置服务 Spring Cloud Config
-- chapter07: 链路追踪 Zipkin
-- chapter08: 监控 Micrometer、Grafana
-- chapter09: 监控 Micrometer、Grafana、Tempo
-- chapter10: 监控 Micrometer、Grafana、Tempo、Loki
-- chapter11：ELK
-- chapter12 认证服务 Spring Security OAuth2
-- Chapter13：监控服务 Spring Boot Admin
-- Chapter14：Kubernetes
-- Chapter15：Istio
-- chapter16: Service Mesh
-- chapter17: Native
+- Chapter01：Restful接口、持久化、SpringDoc OpenAPI、Rabbitmq
+- Chapter02：Kafka
+- Chapter03：Spring Cloud Stream
+- Chapter04：Feign
+- Chapter05：负载均衡 Spring Cloud Loadbalancer
+- Chapter06：服务发现 Eureka
+- Chapter07：配置服务 Spring Cloud Config
+- Chapter08：服务网关 Spring Cloud Gateway
+- Chapter09: 监控服务 Spring Boot Admin
+- Chapter11: 链路追踪 Zipkin
+- Chapter12: Loki
+- Chapter13：Grafana
+- Chapter14：ELK
+- Chapter15：Helm
+- Chapter16：Kubernetes
+- Chapter17：Istio
+- chapter18: Service Mesh
+- chapter19: Native
 
 ## 技术栈
 
@@ -41,17 +37,16 @@
 | Java                                    | 21       | 23                                                                                                                                                                                                                                    |    |
 | Maven                                   | 3.9.9    | 3.9.9                                                                                                                                                                                                                                 |    |
 | PostgreSQL                              | 17       | 17                                                                                                                                                                                                                                    |    |
-| MongoDB                                 | 8        | 8.0.1                                                                                                                                                                                                                                 |    |
+| MongoDB                                 | 8.0.4    | 8.0.4                                                                                                                                                                                                                                 |    |
 | Rabbitmq                                | 4        | 4                                                                                                                                                                                                                                     |    |
 | Kafka                                   | 3.8      | 3.8                                                                                                                                                                                                                                   |    |
-| ActiveMQ                                | 6        |                                                                                                                                                                                                                                       |    |
 | Kubernetes                              | 1.31     |                                                                                                                                                                                                                                       |    |
 | Grafana (Prometheus/Grafana/Loki/Tempo) |          |                                                                                                                                                                                                                                       |    |
 | ELK                                     | 8.5.3    |                                                                                                                                                                                                                                       |    |
-| Spring Boot                             | 3.3.4    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |    |
-| Spring Boot Admin                       | 3.3.4    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://repo1.maven.org/maven2/de/codecentric/spring-boot-admin-starter-server/maven-metadata.xml">                                   |    |
-| Spring Cloud                            | 2023.0.3 | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=202&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"> |    |
-| SpringDoc OpenAPI                       | 2.6.0    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |    |
+| Spring Boot                             | 3.4.2    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |    |
+| Spring Boot Admin                       | 3.4.1    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://repo1.maven.org/maven2/de/codecentric/spring-boot-admin-starter-server/maven-metadata.xml">                                   |    |
+| Spring Cloud                            | 2024.0.0 | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=202&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"> |    |
+| SpringDoc OpenAPI                       | 2.8.4    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |    |
 
 ## 本地开发环境准备
 
@@ -140,6 +135,25 @@ mvn clean verify -DskipTests sonar:sonar -Dsonar.login=admin -Dsonar.password=ad
 
 ## 参考
 
+Video：
+
+- [Mastering Microservices: Spring boot, Spring Cloud and Keycloak In 7 Hours](https://www.youtube.com/watch?v=jdeSV0GRvwI)
+- [Distributed version of the Spring PetClinic Sample Application built with Spring Cloud and Spring AI](https://github.com/odedia/spring-boot3-microservices)
+- [Spring Boot 3 Microservices with Kubernetes and Angular Complete Course in 7 Hours](https://www.youtube.com/watch?v=yn_stY3HCr8)
+
+Code：
+
+- https://github.com/chensoul/Microservices-with-Spring-Boot-and-Spring-Cloud-Third-Edition
+- https://github.com/eazybytes/microservices Grafana + Prometheus + Loki + Tempo
+- https://github.com/chensoul/spring-boot-3-microservices-course
+- https://github.com/chensoul/spring-petclinic-microservices
+- https://github.com/chensoul/spring-boot-microservices-course
+- https://github.com/chensoul/spring-boot-3-microservices-course
+- https://github.com/in28minutes/spring-microservices-v3
+- https://github.com/ali-bouali/microservices-full-code
+- https://github.com/jhipster/jhipster-lite
+- https://github.com/sivaprasadreddy/spring-boot-microservices-series
+- https://github.com/Nasruddin/spring-boot-based-microservices
 
 ## 贡献
 

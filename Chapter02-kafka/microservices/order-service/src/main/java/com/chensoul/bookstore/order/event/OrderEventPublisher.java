@@ -1,6 +1,6 @@
 package com.chensoul.bookstore.order.event;
 
-import com.chensoul.bookstore.order.ApplicationProperties;
+import com.chensoul.bookstore.order.config.ApplicationProperties;
 import com.chensoul.bookstore.order.OrderCancelledEvent;
 import com.chensoul.bookstore.order.OrderCreatedEvent;
 import com.chensoul.bookstore.order.OrderDeliveredEvent;

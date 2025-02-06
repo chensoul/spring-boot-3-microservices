@@ -1,6 +1,6 @@
 package com.chensoul.bookstore.webapp.client;
 
-import com.chensoul.bookstore.webapp.ApplicationProperties;
+import com.chensoul.bookstore.webapp.config.ApplicationProperties;
 import com.chensoul.bookstore.webapp.client.order.OrderServiceClient;
 import com.chensoul.bookstore.webapp.client.product.ProductServiceClient;
 import java.time.Duration;
