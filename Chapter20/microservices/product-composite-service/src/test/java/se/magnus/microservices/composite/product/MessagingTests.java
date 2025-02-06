@@ -70,7 +70,7 @@ class MessagingTests {
         final List<String> recommendationMessages = getMessages("recommendations");
         final List<String> reviewMessages = getMessages("reviews");
 
-        // Assert one expected new product event queued up
+        // Assert one expected new client event queued up
         assertEquals(1, productMessages.size());
 
         Event<Integer, Product> expectedEvent =
@@ -94,7 +94,7 @@ class MessagingTests {
         final List<String> recommendationMessages = getMessages("recommendations");
         final List<String> reviewMessages = getMessages("reviews");
 
-        // Assert one create product event queued up
+        // Assert one create client event queued up
         assertEquals(1, productMessages.size());
 
         Event<Integer, Product> expectedProductEvent =
@@ -127,7 +127,7 @@ class MessagingTests {
         final List<String> recommendationMessages = getMessages("recommendations");
         final List<String> reviewMessages = getMessages("reviews");
 
-        // Assert one delete product event queued up
+        // Assert one delete client event queued up
         assertEquals(1, productMessages.size());
 
         Event<Integer, Product> expectedProductEvent = new Event(DELETE, 1, null);

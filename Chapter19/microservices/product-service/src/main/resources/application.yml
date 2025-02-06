@@ -1,6 +1,6 @@
 spring.config.import: "optional:configserver:"
 spring:
-  application.name: product
+  application.name: client
   cloud.config:
     failFast: true
     retry:

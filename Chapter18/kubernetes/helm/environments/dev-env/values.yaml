@@ -65,6 +65,6 @@ product-composite:
 destinationRules:
   - name: product-composite
   - name: authorization
-  - name: product
+  - name: client
   - name: recommendation
   - name: review

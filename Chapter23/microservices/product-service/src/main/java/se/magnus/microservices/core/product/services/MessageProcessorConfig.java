@@ -32,13 +32,13 @@ public class MessageProcessorConfig {
 
         case CREATE:
           Product product = event.getData();
-          LOG.info("Create product with ID: {}", product.getProductId());
+          LOG.info("Create client with ID: {}", product.getProductId());
           productService.createProduct(product);
           break;
 
         case DELETE:
           int productId = event.getKey();
-          LOG.info("Delete product with ProductID: {}", productId);
+          LOG.info("Delete client with ProductID: {}", productId);
           productService.deleteProduct(productId);
           break;
 

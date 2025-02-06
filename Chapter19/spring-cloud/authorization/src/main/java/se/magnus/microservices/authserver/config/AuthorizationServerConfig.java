@@ -119,8 +119,8 @@ public class AuthorizationServerConfig {
             .redirectUri("https://my.redirect.uri")
             .redirectUri("https://localhost:8443/openapi/webjars/swagger-ui/oauth2-redirect.html")
             .scope(OidcScopes.OPENID)
-            .scope("product:read")
-            .scope("product:write")
+            .scope("client:read")
+            .scope("client:write")
             .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
             .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofHours(1)).build())
             .build();
@@ -135,7 +135,7 @@ public class AuthorizationServerConfig {
             .redirectUri("https://my.redirect.uri")
             .redirectUri("https://localhost:8443/openapi/webjars/swagger-ui/oauth2-redirect.html")
             .scope(OidcScopes.OPENID)
-            .scope("product:read")
+            .scope("client:read")
             .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
             .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofHours(1)).build())
             .build();

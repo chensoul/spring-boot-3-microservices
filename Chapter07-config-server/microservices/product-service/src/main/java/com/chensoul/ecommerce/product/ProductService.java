@@ -56,7 +56,7 @@ public class ProductService {
             Product product = storedProducts.get(i);
             ProductPurchaseRequest productRequest = sortedRequest.get(i);
             if (product.getAvailableQuantity() < productRequest.quantity()) {
-                throw new BusinessException("Insufficient stock quantity for product with ID:: " + productRequest.productId());
+                throw new BusinessException("Insufficient stock quantity for client with ID:: " + productRequest.productId());
             }
             Long newAvailableQuantity = product.getAvailableQuantity() - productRequest.quantity();
             product.setAvailableQuantity(newAvailableQuantity);

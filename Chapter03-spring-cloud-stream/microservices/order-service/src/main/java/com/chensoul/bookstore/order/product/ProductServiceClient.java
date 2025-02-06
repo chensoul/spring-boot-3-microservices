@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.order.product;
+package com.chensoul.bookstore.order.client;
 
 import com.chensoul.bookstore.product.Product;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

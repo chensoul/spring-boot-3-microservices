@@ -32,7 +32,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     /**
      * Create Product
      *
-     * @param body A JSON representation of the new composite product
+     * @param body A JSON representation of the new composite client
      */
     @Override
     public void createProduct(ProductAggregate body) {
@@ -70,17 +70,17 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     /**
      * Get a Product
      *
-     * @param productId Id of the product
+     * @param productId Id of the client
      * @return
      */
     @Override
     public ProductAggregate getProduct(int productId) {
 
-        LOG.info("getCompositeProduct: lookup a product aggregate for productId: {}", productId);
+        LOG.info("getCompositeProduct: lookup a client aggregate for productId: {}", productId);
 
         Product product = integration.getProduct(productId);
         if (product == null) {
-            throw new NotFoundException("No product found for productId: " + productId);
+            throw new NotFoundException("No client found for productId: " + productId);
         }
 
         List<Recommendation> recommendations = integration.getRecommendations(productId);
@@ -95,12 +95,12 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     /**
      * Delete a Product
      *
-     * @param productId Id of the product
+     * @param productId Id of the client
      */
     @Override
     public void deleteProduct(int productId) {
 
-        LOG.info("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
+        LOG.info("deleteCompositeProduct: Deletes a client aggregate for productId: {}", productId);
 
         integration.deleteProduct(productId);
 
@@ -116,7 +116,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
         List<Recommendation> recommendations,
         List<Review> reviews) {
 
-        // 1. Setup product info
+        // 1. Setup client info
         int productId = product.getProductId();
         String name = product.getName();
         int weight = product.getWeight();

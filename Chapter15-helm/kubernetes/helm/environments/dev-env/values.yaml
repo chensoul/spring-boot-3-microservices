@@ -5,7 +5,7 @@ secrets:
     SPRING_SECURITY_USER_NAME: dev-usr
     SPRING_SECURITY_USER_PASSWORD: dev-pwd
 
-  config-client-credentials:
+  config-product-credentials:
     CONFIG_SERVER_USR: dev-usr
     CONFIG_SERVER_PWD: dev-pwd
 
@@ -22,25 +22,25 @@ config-server:
 
 gateway:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 
 authorization:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 
 product:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 
 recommendation:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 
 review:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 
 product-composite:
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
 

@@ -22,11 +22,12 @@ class ClientConfig {
     }
 
     @Bean
-    RestClientCustomizer restClientCustomizer() {
-        return restClientBuilder -> restClientBuilder.requestFactory(
-                ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS
-                        .withConnectTimeout(Duration.ofSeconds(5))
-                        .withReadTimeout(Duration.ofSeconds(5))));
+RestClientCustomizer restClientCustomizer() {
+        return restClientBuilder -> restClientBuilder
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect()
+                        .build(ClientHttpRequestFactorySettings.defaults()
+                                .withConnectTimeout(Duration.ofSeconds(5))
+                                .withReadTimeout(Duration.ofSeconds(5))));
     }
 
     @Bean

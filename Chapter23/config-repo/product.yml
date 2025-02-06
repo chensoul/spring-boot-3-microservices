@@ -1,14 +1,14 @@
 server.port: 7001
 server.error.include-message: always
 
-spring.application.name: product
+spring.application.name: client
 
 management.endpoint.health.group.readiness.include: readinessState, rabbit, mongo
 
 spring.data.mongodb:
   host: localhost
   port: 27017
-  database: product-db
+  database: client-db
 
 spring.cloud.function.definition: messageProcessor
 

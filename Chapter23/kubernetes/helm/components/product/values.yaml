@@ -1,4 +1,4 @@
-fullnameOverride: product
+fullnameOverride: client
 
 annotations:
   prometheus.io/scrape: "true"

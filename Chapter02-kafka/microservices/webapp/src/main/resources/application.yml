@@ -6,18 +6,15 @@ spring.mvc.problemdetails.enabled: true
 bookstore.product-url: http://localhost:8083
 bookstore.order-url: http://localhost:8082
 
-management.info.git.mode: full
 management.endpoints.web.exposure.include: "*"
 management.metrics.tags.application: "${spring.application.name}"
-management.tracing.enabled: false
-management.tracing.sampling.probability: 1.0
 
 spring.security.oauth2.client.registration.bookstore-webapp.client-id: default-client-id
 spring.security.oauth2.client.registration.bookstore-webapp.client-secret: default-client-secret
 spring.security.oauth2.client.registration.bookstore-webapp.authorization-grant-type: authorization_code
 spring.security.oauth2.client.registration.bookstore-webapp.scope: openid, profile
 spring.security.oauth2.client.registration.bookstore-webapp.redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-spring.security.oauth2.client.provider.bookstore-webapp.issuer-uri: "${OAUTH2_SERVER_URL:http://localhost:9000}"
+spring.security.oauth2.client.provider.bookstore-webapp.issuer-uri: "http://localhost:9000"
 
 ---
 spring.config.activate.on-profile: docker
@@ -25,4 +22,4 @@ spring.config.activate.on-profile: docker
 bookstore.product-url: http://product-service:8083
 bookstore.order-url: http://order-service:8082
 
-OAUTH2_SERVER_URL: http://spring-authorization-server:9000
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://spring-authorization-server:9000

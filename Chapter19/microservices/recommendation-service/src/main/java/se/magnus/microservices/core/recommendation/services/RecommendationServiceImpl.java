@@ -61,7 +61,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
   @Override
   public void deleteRecommendations(int productId) {
-    LOG.info("deleteRecommendations: tries to delete recommendations for the product with productId: {}", productId);
+    LOG.info("deleteRecommendations: tries to delete recommendations for the client with productId: {}", productId);
     repository.deleteAll(repository.findByProductId(productId));
   }
 }

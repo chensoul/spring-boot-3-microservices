@@ -48,14 +48,14 @@ public class ProductServiceImpl implements ProductService {
       throw new InvalidInputException("Invalid productId: " + productId);
     }
 
-    LOG.info("Will get product info for id={}", productId);
+    LOG.info("Will get client info for id={}", productId);
 
     Optional<ProductEntity> productEntity = repository.findByProductId(productId);
     if (productEntity.isPresent()) {
       Product product = mapper.entityToApi(productEntity.get());
-      LOG.info("Got product info for id={}", productId);
+      LOG.info("Got client info for id={}", productId);
       return product;
     }
-    throw new NotFoundException("No product found for productId: " + productId);
+    throw new NotFoundException("No client found for productId: " + productId);
   }
 }

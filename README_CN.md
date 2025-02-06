@@ -11,7 +11,7 @@
 
 ## 模块
 
-- Chapter01：Restful接口、持久化、SpringDoc OpenAPI、Rabbitmq
+- Chapter01：Restful、SpringDoc、Resilience4j、RestClient、Rabbitmq
 - Chapter02：Kafka
 - Chapter03：Spring Cloud Stream
 - Chapter04：Feign

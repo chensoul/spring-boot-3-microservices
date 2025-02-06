@@ -4,11 +4,11 @@ metadata:
   name: product
 spec:
   hosts:
-    - product
+    - client
   http:
     - route:
         - destination:
-            host: product
+            host: client
       fault:
         delay:
           fixedDelay: 3s

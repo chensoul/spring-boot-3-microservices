@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.order.product;
+package com.chensoul.bookstore.order.client;
 
 import com.chensoul.bookstore.order.config.ApplicationProperties;
 import java.time.Duration;
@@ -11,11 +11,12 @@ import org.springframework.web.client.RestClient;
 @Configuration
 class ProductServiceClientConfig {
     @Bean
-    RestClient restClient(RestClient.Builder builder, ApplicationProperties properties) {
+       RestClient restClient(RestClient.Builder builder, ApplicationProperties properties) {
         return builder.baseUrl(properties.productServiceUrl())
-                .requestFactory(ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS
-                        .withConnectTimeout(Duration.ofSeconds(5))
-                        .withReadTimeout(Duration.ofSeconds(5))))
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect()
+                        .build(ClientHttpRequestFactorySettings.defaults()
+                                .withConnectTimeout(Duration.ofSeconds(5))
+                                .withReadTimeout(Duration.ofSeconds(5))))
                 .build();
     }
 }

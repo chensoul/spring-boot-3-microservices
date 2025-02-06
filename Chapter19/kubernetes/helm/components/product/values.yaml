@@ -1,4 +1,4 @@
-fullnameOverride: product
+fullnameOverride: client
 
 image:
   name: product-service

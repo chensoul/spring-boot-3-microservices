@@ -1,17 +1,18 @@
 package com.chensoul.bookstore.webapp.client;
 
-import com.chensoul.bookstore.webapp.ApplicationProperties;
+import com.chensoul.bookstore.webapp.config.ApplicationProperties;
 import com.chensoul.bookstore.webapp.client.order.OrderServiceClient;
 import com.chensoul.bookstore.webapp.client.product.ProductServiceClient;
-import java.time.Duration;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.boot.web.client.RestClientCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+
+import java.time.Duration;
 
 @Configuration
 class ClientConfig {
@@ -23,10 +24,11 @@ class ClientConfig {
 
     @Bean
     RestClientCustomizer restClientCustomizer() {
-        return restClientBuilder -> restClientBuilder.requestFactory(
-                ClientHttpRequestFactories.get(ClientHttpRequestFactorySettings.DEFAULTS
-                        .withConnectTimeout(Duration.ofSeconds(5))
-                        .withReadTimeout(Duration.ofSeconds(5))));
+        return restClientBuilder -> restClientBuilder
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect()
+                        .build(ClientHttpRequestFactorySettings.defaults()
+                                .withConnectTimeout(Duration.ofSeconds(5))
+                                .withReadTimeout(Duration.ofSeconds(5))));
     }
 
     @Bean

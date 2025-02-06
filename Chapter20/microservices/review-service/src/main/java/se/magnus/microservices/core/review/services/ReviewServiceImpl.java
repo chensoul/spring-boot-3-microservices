@@ -61,7 +61,7 @@ public class ReviewServiceImpl implements ReviewService {
 
   @Override
   public void deleteReviews(int productId) {
-    LOG.info("deleteReviews: tries to delete reviews for the product with productId: {}", productId);
+    LOG.info("deleteReviews: tries to delete reviews for the client with productId: {}", productId);
     repository.deleteAll(repository.findByProductId(productId));
   }
 }

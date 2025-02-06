@@ -55,16 +55,16 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
   }
 
   @Override
-  @Retry(name = "product")
-  @TimeLimiter(name = "product")
-  @CircuitBreaker(name = "product", fallbackMethod = "getProductFallbackValue")
+  @Retry(name = "client")
+  @TimeLimiter(name = "client")
+  @CircuitBreaker(name = "client", fallbackMethod = "getProductFallbackValue")
   public Product getProduct(int productId) {
     try {
-      String url = PRODUCT_SERVICE_URL + "/product/" + productId;
+      String url = PRODUCT_SERVICE_URL + "/client/" + productId;
       LOG.info("Will call the getProduct API on URL: {}", url);
 
       Product product = restTemplate.getForObject(url, Product.class);
-      LOG.info("Found a product with id: {}", product.getProductId());
+      LOG.info("Found a client with id: {}", product.getProductId());
 
       return product;
 
@@ -74,7 +74,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
   }
 
   private Product getProductFallbackValue(int productId, CallNotPermittedException ex) {
-    LOG.warn("Creating a fail-fast fallback product for productId = {}, delay = {}, faultPercent = {} and exception = {} ",
+    LOG.warn("Creating a fail-fast fallback client for productId = {}, delay = {}, faultPercent = {} and exception = {} ",
             productId, ex.toString());
 
     if (productId == 13) {
@@ -83,7 +83,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
       throw new NotFoundException(errMsg);
     }
 
-    return new Product(productId, "Fallback product" + productId, productId);
+    return new Product(productId, "Fallback client" + productId, productId);
   }
 
   @Override
@@ -107,7 +107,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
               })
               .getBody();
 
-      LOG.info("Found {} recommendations for a product with id: {}", recommendations.size(), productId);
+      LOG.info("Found {} recommendations for a client with id: {}", recommendations.size(), productId);
       return recommendations;
 
     } catch (Exception ex) {
@@ -137,7 +137,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
               })
               .getBody();
 
-      LOG.info("Found {} reviews for a product with id: {}", reviews.size(), productId);
+      LOG.info("Found {} reviews for a client with id: {}", reviews.size(), productId);
       return reviews;
 
     } catch (Exception ex) {

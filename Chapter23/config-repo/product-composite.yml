@@ -1,7 +1,7 @@
 springdoc:
   swagger-ui.path: /openapi/swagger-ui.html
   api-docs.path: /openapi/v3/api-docs
-  packagesToScan: com.chensoul.ecommerce.composite.product
+  packagesToScan: com.chensoul.ecommerce.composite.client
   pathsToMatch: /**
   cache.disabled: true
 

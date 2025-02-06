@@ -13,13 +13,10 @@ order.error-order-queue: error-order
 order.publish-order-events-job-cron: "*/5 * * * * *"
 order.new-order-job-cron: "*/10 * * * * *"
 
-management.info.git.mode: full
 management.endpoints.web.exposure.include: "*"
 management.metrics.tags.application: "${spring.application.name}"
-management.tracing.enabled: false
-management.tracing.sampling.probability: 1.0
 
-spring.security.oauth2.resourceserver.jwt.issuer-uri: ${OAUTH2_SERVER_URL:http://localhost:9000}
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://localhost:9000
 
 spring.datasource.url: jdbc:postgresql://localhost:15432/postgres
 spring.datasource.username: postgres
@@ -61,7 +58,7 @@ spring.config.activate.on-profile: docker
 
 order.product-service-url: http://product-service:8083
 
-OAUTH2_SERVER_URL: http://spring-authorization-server:9000
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://spring-authorization-server:9000
 
 spring.datasource.url: jdbc:postgresql://postgres-order:5432/postgres
 

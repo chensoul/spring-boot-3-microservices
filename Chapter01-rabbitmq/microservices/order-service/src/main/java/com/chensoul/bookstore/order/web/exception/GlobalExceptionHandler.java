@@ -2,10 +2,13 @@ package com.chensoul.bookstore.order.web.exception;
 
 import com.chensoul.bookstore.order.domain.InvalidOrderException;
 import com.chensoul.bookstore.order.domain.OrderNotFoundException;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -23,7 +26,12 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final URI NOT_FOUND_TYPE = URI.create("https://api.bookstore.com/errors/not-found");
     private static final URI ISE_FOUND_TYPE = URI.create("https://api.bookstore.com/errors/server-error");
     private static final URI BAD_REQUEST_TYPE = URI.create("https://api.bookstore.com/errors/bad-request");
-    private static final String SERVICE_NAME = "order-service";
+
+    private final ConfigurableApplicationContext context;
+
+    public GlobalExceptionHandler(ConfigurableApplicationContext context) {
+        this.context = context;
+    }
 
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnhandledException(Exception e) {
@@ -31,7 +39,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         problemDetail.setTitle("Internal Server Error");
         problemDetail.setType(ISE_FOUND_TYPE);
-        problemDetail.setProperty("service", SERVICE_NAME);
+        problemDetail.setProperty("service", context.getApplicationName());
         problemDetail.setProperty("error_category", "Generic");
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
@@ -42,7 +50,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
         problemDetail.setTitle("Order Not Found");
         problemDetail.setType(NOT_FOUND_TYPE);
-        problemDetail.setProperty("service", SERVICE_NAME);
+        problemDetail.setProperty("service", context.getApplicationName());
         problemDetail.setProperty("error_category", "Generic");
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
@@ -53,14 +61,15 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
         problemDetail.setTitle("Invalid Order Creation Request");
         problemDetail.setType(BAD_REQUEST_TYPE);
-        problemDetail.setProperty("service", SERVICE_NAME);
+        problemDetail.setProperty("service", context.getApplicationName());
         problemDetail.setProperty("error_category", "Generic");
         problemDetail.setProperty("timestamp", Instant.now());
         return problemDetail;
     }
 
     @Override
-    @Nullable protected ResponseEntity<Object> handleMethodArgumentNotValid(
+    @Nullable
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<String> errors = new ArrayList<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
@@ -72,7 +81,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setTitle("Bad Request");
         problemDetail.setType(BAD_REQUEST_TYPE);
         problemDetail.setProperty("errors", errors);
-        problemDetail.setProperty("service", SERVICE_NAME);
+        problemDetail.setProperty("service", context.getApplicationName());
         problemDetail.setProperty("error_category", "Generic");
         problemDetail.setProperty("timestamp", Instant.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problemDetail);

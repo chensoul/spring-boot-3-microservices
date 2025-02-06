@@ -2,7 +2,7 @@ package com.chensoul.bookstore.order.domain;
 
 import com.chensoul.bookstore.order.CreateOrderRequest;
 import com.chensoul.bookstore.order.OrderItem;
-import com.chensoul.bookstore.order.product.ProductServiceClient;
+import com.chensoul.bookstore.order.client.ProductServiceClient;
 import com.chensoul.bookstore.product.Product;
 import java.util.Set;
 import org.slf4j.Logger;

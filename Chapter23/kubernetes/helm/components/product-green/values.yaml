@@ -1,5 +1,5 @@
-nameOverride: product
-fullnameOverride: product-green
+nameOverride: client
+fullnameOverride: client-green
 
 image:
   name: product-service

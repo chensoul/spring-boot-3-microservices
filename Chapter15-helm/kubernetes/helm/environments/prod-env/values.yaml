@@ -5,7 +5,7 @@ secrets:
     SPRING_SECURITY_USER_NAME: prod-usr
     SPRING_SECURITY_USER_PASSWORD: prod-pwd
 
-  config-client-credentials:
+  config-product-credentials:
     CONFIG_SERVER_USR: prod-usr
     CONFIG_SERVER_PWD: prod-pwd
 
@@ -29,7 +29,7 @@ gateway:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi
@@ -42,7 +42,7 @@ authorization:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi
@@ -55,7 +55,7 @@ product:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi
@@ -68,7 +68,7 @@ recommendation:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi
@@ -81,7 +81,7 @@ review:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi
@@ -94,7 +94,7 @@ product-composite:
   env:
     SPRING_PROFILES_ACTIVE: "docker,prod"
   envFromSecretRefs:
-    - config-client-credentials
+    - config-product-credentials
   resources:
     requests:
       memory: 200Mi

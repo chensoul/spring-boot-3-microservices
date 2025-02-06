@@ -27,7 +27,7 @@ authorization:
       memory: 400Mi
 
 product:
-  fullnameOverride: product-v1
+  fullnameOverride: client-v1
   image:
     tag: v1
   env:
@@ -85,7 +85,7 @@ product-composite:
       memory: 400Mi
 
 product-green:
-  fullnameOverride: product-v2
+  fullnameOverride: client-v2
   image:
     tag: v2
   env:
@@ -130,14 +130,14 @@ review-green:
       memory: 400Mi
 
 virtualServices:
-  - product
+  - client
   - recommendation
   - review
 
 destinationRules:
   - name: product-composite
   - name: authorization
-  - name: product
+  - name: client
     subsets:
       - labels:
           version: v1

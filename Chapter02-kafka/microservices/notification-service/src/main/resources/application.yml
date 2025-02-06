@@ -9,11 +9,8 @@ notification.cancelled-order-queue: cancelled-order
 notification.error-order-queue: error-order
 notification.support-email: ichensoul@gmail.com
 
-management.info.git.mode: full
 management.endpoints.web.exposure.include: "*"
 management.metrics.tags.application: "${spring.application.name}"
-management.tracing.enabled: false
-management.tracing.sampling.probability: 1.0
 
 spring:
   kafka:
