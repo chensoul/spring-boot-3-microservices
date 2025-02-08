@@ -5,15 +5,18 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class ContainersConfig {
-    static String KEYCLOAK_IMAGE = "quay.io/keycloak/keycloak:24.0.2";
-    static String realmImportFile = "/test-bookstore-realm.json";
-    static String realmName = "bookstore";
+    @Container
+    static GenericContainer<?> authServer = new GenericContainer<>("chensoul/spring-authorization-server:0.0.1")
+            .withExposedPorts(9000);
 
     @Bean
     @ServiceConnection
@@ -27,12 +30,10 @@ public class ContainersConfig {
         return new RabbitMQContainer(DockerImageName.parse("rabbitmq:4-alpine"));
     }
 
-    @Bean
-    KeycloakContainer keycloak(DynamicPropertyRegistry registry) {
-        var keycloak = new KeycloakContainer(KEYCLOAK_IMAGE).withRealmImportFile(realmImportFile);
-        registry.add(
-                "spring.security.oauth2.resourceserver.jwt.issuer-uri",
-                () -> keycloak.getAuthServerUrl() + "/realms/" + realmName);
-        return keycloak;
+
+    @DynamicPropertySource
+    static void clientRegistrationProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri",
+                () -> "http://localhost:" + authServer.getExposedPorts().get(0));
     }
 }

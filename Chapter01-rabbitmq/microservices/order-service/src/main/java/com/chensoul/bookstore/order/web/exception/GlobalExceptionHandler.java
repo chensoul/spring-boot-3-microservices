@@ -2,12 +2,10 @@ package com.chensoul.bookstore.order.web.exception;
 
 import com.chensoul.bookstore.order.domain.InvalidOrderException;
 import com.chensoul.bookstore.order.domain.OrderNotFoundException;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -68,8 +66,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    @Nullable
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+    @Nullable protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<String> errors = new ArrayList<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
