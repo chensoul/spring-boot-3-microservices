@@ -16,7 +16,7 @@
     <description>Order Service</description>
 
     <properties>
-        <wiremock.version>3.10.0</wiremock.version>
+        <wiremock.version>3.12.0</wiremock.version>
         <wiremock-testcontainers.version>1.0-alpha-14</wiremock-testcontainers.version>
         <instancio.version>5.3.0</instancio.version>
     </properties>
