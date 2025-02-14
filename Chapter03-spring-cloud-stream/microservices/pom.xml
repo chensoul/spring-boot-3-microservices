@@ -24,7 +24,7 @@
     <spring-cloud.version>2024.0.0</spring-cloud.version>
     <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
     <springdocs.version>2.8.4</springdocs.version>
-    <shedlock.version>6.2.0</shedlock.version>
+    <shedlock.version>6.3.0</shedlock.version>
 
     <spotless-maven-plugin.version>2.44.2</spotless-maven-plugin.version>
     <maven.deploy.skip>true</maven.deploy.skip>
