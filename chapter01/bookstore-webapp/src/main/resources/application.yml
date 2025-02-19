@@ -1,0 +1,31 @@
+server.port: 8080
+server.shutdown: graceful
+spring.mvc.problemdetails.enabled: true
+
+spring.application.name: bookstore-webapp
+
+bookstore.product-url: http://localhost:8083
+bookstore.order-url: http://localhost:8082
+
+management.endpoints.web.exposure.include: "*"
+management.metrics.tags.application: "${spring.application.name}"
+
+spring.security.oauth2.client.registration.bookstore-webapp.client-id: default-client-id
+spring.security.oauth2.client.registration.bookstore-webapp.client-secret: default-client-secret
+spring.security.oauth2.client.registration.bookstore-webapp.authorization-grant-type: authorization_code
+spring.security.oauth2.client.registration.bookstore-webapp.scope: openid, profile
+spring.security.oauth2.client.registration.bookstore-webapp.redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+spring.security.oauth2.client.provider.bookstore-webapp.issuer-uri: "http://localhost:9000"
+
+# Enable /actuator/logfile endpoint for all apps
+logging.file.path: logs/${spring.application.name}
+---
+spring.config.activate.on-profile: docker
+
+bookstore.product-url: http://bookstore-product:8083
+bookstore.order-url: http://bookstore-order:8082
+
+spring.security.oauth2.resourceserver.jwt.issuer-uri: http://spring-authorization-server:9000
+
+# docker容器中用户无法创建路径，故使用/tmp/logs
+logging.file.path: /tmp/logs/${spring.application.name}

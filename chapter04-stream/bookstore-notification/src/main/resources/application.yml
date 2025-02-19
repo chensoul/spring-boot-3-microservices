@@ -1,0 +1,104 @@
+spring.application.name: bookstore-notification
+server.port: 8081
+server.shutdown: graceful
+
+notification.order-event-exchange: order-exchange
+notification.new-order-queue: new-order
+notification.delivered-order-queue: delivered-order
+notification.cancelled-order-queue: cancelled-order
+notification.error-order-queue: error-order
+notification.support-email: ichensoul@gmail.com
+
+management.endpoints.web.exposure.include: "*"
+management.metrics.tags.application: "${spring.application.name}"
+
+spring.cloud.function.definition: messageProcessor
+
+spring.cloud.stream:
+  defaultBinder: rabbit
+  default.contentType: application/json
+  bindings:
+    messageProcessor-in-0:
+      destination: notification
+      group: notificationGroup
+    notification-out-0: # for test
+      destination: notification
+      producer:
+        required-groups: auditGroup
+
+spring.cloud.stream.bindings.messageProcessor-in-0.consumer:
+  maxAttempts: 3
+  backOffInitialInterval: 500
+  backOffMaxInterval: 1000
+  backOffMultiplier: 2.0
+
+spring.cloud.stream.rabbit.bindings.messageProcessor-in-0.consumer:
+  autoBindDlq: true
+  republishToDlq: true
+
+spring.cloud.stream.kafka.bindings.messageProcessor-in-0.consumer:
+  enableDlq: true
+
+spring.cloud.stream.kafka.binder:
+  brokers: 127.0.0.1
+  defaultBrokerPort: 9092
+
+spring.rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  username: guest
+  password: guest
+
+spring.mail.host: 127.0.0.1
+spring.mail.port: 1025
+spring.mail.username: PLACEHOLDER
+spring.mail.password: PLACEHOLDER
+spring.mail.properties.mail.smtp.auth: true
+spring.mail.properties.mail.smtp.starttls.enable: true
+
+spring.data.mongodb.host: localhost
+spring.data.mongodb.port: 27017
+spring.data.mongodb.database: mongodb
+spring.data.mongodb.username: user
+spring.data.mongodb.password: pass
+spring.data.mongodb.authentication-database: admin
+
+
+---
+spring.config.activate.on-profile: docker
+
+spring.rabbitmq.host: rabbitmq
+
+spring.mail.host: mailhog
+
+spring.data.mongodb.host: mongodb
+
+spring.cloud.stream.kafka.binder.brokers: kafka
+
+---
+spring.config.activate.on-profile: streaming_partitioned
+
+spring.cloud.stream.bindings.messageProcessor-in-0.consumer:
+  partitioned: true
+  instanceCount: 2
+
+---
+spring.config.activate.on-profile: streaming_instance_0
+
+spring.cloud.stream.bindings.messageProcessor-in-0.consumer.instanceIndex: 0
+
+---
+spring.config.activate.on-profile: streaming_instance_1
+
+spring.cloud.stream.bindings.messageProcessor-in-0.consumer.instanceIndex: 1
+
+---
+spring.config.activate.on-profile: kafka
+
+management.health.rabbit.enabled: false
+
+spring.cloud.stream.defaultBinder: kafka
+
+spring.kafka.bootstrap-servers: kafka:9092
+
+spring.cloud.stream.kafka.binder.replication-factor: 1

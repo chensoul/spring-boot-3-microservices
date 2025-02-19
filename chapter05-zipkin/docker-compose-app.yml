@@ -1,0 +1,75 @@
+services:
+  bookstore-notification:
+    image: chensoul/bookstore-bookstore-notification
+    container_name: bookstore-notification
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    #    depends_on:
+    #      mongodb:
+    #        condition: service_healthy
+    #      rabbitmq:
+    #        condition: service_healthy
+    #      mailhog:
+    #        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+
+  bookstore-order:
+    image: chensoul/bookstore-bookstore-order
+    container_name: bookstore-order
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    #    depends_on:
+    #      postgres-order:
+    #        condition: service_healthy
+    #      rabbitmq:
+    #        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+
+  bookstore-product:
+    image: chensoul/bookstore-bookstore-product
+    container_name: bookstore-product
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+    #    depends_on:
+    #      postgres-product:
+    #        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+
+  bookstore-webapp:
+    image: chensoul/bookstore-webapp
+    container_name: bookstore-webapp
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
