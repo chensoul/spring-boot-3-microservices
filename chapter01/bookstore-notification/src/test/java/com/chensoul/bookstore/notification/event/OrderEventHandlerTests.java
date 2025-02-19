@@ -23,8 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 class OrderEventHandlerTests extends AbstractIT {
-    private final String REDIS_CHANNEL = "test-topic";
-
     @Autowired
     StringRedisTemplate stringRedisTemplate;
 
