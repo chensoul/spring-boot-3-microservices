@@ -6,7 +6,7 @@
 
 Build resilient and scalable microservices using Spring Cloud, Istio, and Kubernetes.
 
-![microservices-architecture](./docs/microservices-architecture.jpg)
+![microservices-architecture](./docs/microservices-architecture.png)
 
 ## Modules
 

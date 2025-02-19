@@ -7,7 +7,7 @@
 使用 Spring Cloud、Istio 和 Kubernetes 构建的一个电商 [微服务](http://www.martinfowler.com/articles/microservices.html)
 项目。
 
-![microservices-architecture](./docs/microservices-architecture.jpg)
+![microservices-architecture](./docs/microservices-architecture.png)
 
 ## 模块
 
