@@ -27,7 +27,7 @@
 
         <wiremock.version>3.12.1</wiremock.version>
         <wiremock-testcontainers.version>1.0-alpha-14</wiremock-testcontainers.version>
-        <instancio.version>5.3.0</instancio.version>
+        <instancio.version>5.4.0</instancio.version>
 
         <spotless-maven-plugin.version>2.44.3</spotless-maven-plugin.version>
     </properties>
