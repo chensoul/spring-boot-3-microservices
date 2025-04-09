@@ -20,13 +20,12 @@ public class ContainersConfig {
     @Bean
     @ServiceConnection
     MongoDBContainer mongoDBContainer() {
-        return new MongoDBContainer(DockerImageName.parse("mongo:8.0.4"));
+        return new MongoDBContainer(DockerImageName.parse("mongo:8"));
     }
 
     @Bean
     GenericContainer<?> redisContainer() {
-        GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse("redis:7"))
-                .withExposedPorts(6379);
+        GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse("redis:7")).withExposedPorts(6379);
         container.start();
         return container;
     }
@@ -34,21 +33,20 @@ public class ContainersConfig {
     @Bean
     GenericContainer<?> mailhogContainer() {
         GenericContainer<?> container =
-                new GenericContainer(DockerImageName.parse("mailhog/mailhog:v1.0.1"))
-                        .withExposedPorts(1025);
+                new GenericContainer(DockerImageName.parse("mailhog/mailhog:v1.0.1")).withExposedPorts(1025);
         container.start();
         return container;
     }
 
     @Bean
-    DynamicPropertyRegistrar apiPropertiesRegistrar(GenericContainer<?> mailhogContainer, GenericContainer<?> redisContainer) {
+    DynamicPropertyRegistrar apiPropertiesRegistrar(
+            GenericContainer<?> mailhogContainer, GenericContainer<?> redisContainer) {
         return registry -> {
             registry.add("spring.mail.host", mailhogContainer::getHost);
             registry.add("spring.mail.port", mailhogContainer::getFirstMappedPort);
 
             registry.add("spring.data.redis.host", redisContainer::getHost);
             registry.add("spring.data.redis.port", redisContainer::getFirstMappedPort);
-
         };
     }
 }

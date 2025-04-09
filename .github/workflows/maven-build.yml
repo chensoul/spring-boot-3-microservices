@@ -25,4 +25,4 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build with Maven
-        run: cd chapter01 && mvn -B package
+        run: cd chapter01 && mvn -ntp -B package

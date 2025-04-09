@@ -8,8 +8,8 @@ import org.springframework.context.ApplicationEvent;
 public class BookstoreEvent extends ApplicationEvent {
     public static String REDIS_CHANNEL = "bookstore-topic";
 
-    private OrderEventType orderEventType;
-    private Object source;
+    private final OrderEventType orderEventType;
+    private final Object source;
 
     public BookstoreEvent(OrderEventType orderEventType, Object source) {
         super(source);

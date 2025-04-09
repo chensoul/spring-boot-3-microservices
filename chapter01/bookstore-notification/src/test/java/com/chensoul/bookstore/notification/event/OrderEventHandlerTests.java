@@ -9,16 +9,12 @@ import static org.mockito.Mockito.verify;
 import com.chensoul.bookstore.api.event.BookstoreEvent;
 import com.chensoul.bookstore.api.order.*;
 import com.chensoul.bookstore.notification.AbstractIT;
-import com.chensoul.bookstore.notification.config.ApplicationProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -38,7 +34,10 @@ class OrderEventHandlerTests extends AbstractIT {
 
         OrderCreatedEvent event = new OrderCreatedEvent(
                 UUID.randomUUID().toString(), orderNumber, Set.of(), customer, address, LocalDateTime.now());
-        stringRedisTemplate.convertAndSend(REDIS_CHANNEL, objectMapper.writeValueAsString(new BookstoreEvent(OrderEventType.ORDER_CREATED, objectMapper.writeValueAsString(event))));
+        stringRedisTemplate.convertAndSend(
+                REDIS_CHANNEL,
+                objectMapper.writeValueAsString(
+                        new BookstoreEvent(OrderEventType.ORDER_CREATED, objectMapper.writeValueAsString(event))));
 
         await().atMost(30, SECONDS).untilAsserted(() -> {
             verify(notificationService).sendOrderCreatedNotification(any(OrderCreatedEvent.class));
@@ -51,7 +50,10 @@ class OrderEventHandlerTests extends AbstractIT {
 
         var event = new OrderDeliveredEvent(
                 UUID.randomUUID().toString(), orderNumber, Set.of(), customer, address, LocalDateTime.now());
-        stringRedisTemplate.convertAndSend(REDIS_CHANNEL, objectMapper.writeValueAsString(new BookstoreEvent(OrderEventType.ORDER_DELIVERED, objectMapper.writeValueAsString(event))));
+        stringRedisTemplate.convertAndSend(
+                REDIS_CHANNEL,
+                objectMapper.writeValueAsString(
+                        new BookstoreEvent(OrderEventType.ORDER_DELIVERED, objectMapper.writeValueAsString(event))));
 
         await().atMost(30, SECONDS).untilAsserted(() -> {
             verify(notificationService).sendOrderDeliveredNotification(any(OrderDeliveredEvent.class));
@@ -70,7 +72,10 @@ class OrderEventHandlerTests extends AbstractIT {
                 address,
                 "test cancel reason",
                 LocalDateTime.now());
-        stringRedisTemplate.convertAndSend(REDIS_CHANNEL, objectMapper.writeValueAsString(new BookstoreEvent(OrderEventType.ORDER_CANCELLED, objectMapper.writeValueAsString(event))));
+        stringRedisTemplate.convertAndSend(
+                REDIS_CHANNEL,
+                objectMapper.writeValueAsString(
+                        new BookstoreEvent(OrderEventType.ORDER_CANCELLED, objectMapper.writeValueAsString(event))));
 
         await().atMost(30, SECONDS).untilAsserted(() -> {
             verify(notificationService).sendOrderCancelledNotification(any(OrderCancelledEvent.class));
@@ -89,7 +94,10 @@ class OrderEventHandlerTests extends AbstractIT {
                 address,
                 "test error reason",
                 LocalDateTime.now());
-        stringRedisTemplate.convertAndSend(REDIS_CHANNEL, objectMapper.writeValueAsString(new BookstoreEvent(OrderEventType.ORDER_ERROR, objectMapper.writeValueAsString(event))));
+        stringRedisTemplate.convertAndSend(
+                REDIS_CHANNEL,
+                objectMapper.writeValueAsString(
+                        new BookstoreEvent(OrderEventType.ORDER_ERROR, objectMapper.writeValueAsString(event))));
 
         await().atMost(30, SECONDS).untilAsserted(() -> {
             verify(notificationService).sendOrderErrorEventNotification(any(OrderErrorEvent.class));

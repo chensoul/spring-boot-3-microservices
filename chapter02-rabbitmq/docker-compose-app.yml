@@ -7,19 +7,10 @@ services:
     ports:
       - "8081:8081"
     restart: unless-stopped
-    #    depends_on:
-    #      mongodb:
-    #        condition: service_healthy
-    #      rabbitmq:
-    #        condition: service_healthy
-    #      mailhog:
-    #        condition: service_started
     deploy:
       resources:
         limits:
           memory: 700m
-    labels:
-      logging: "promtail"
 
   bookstore-order:
     image: chensoul/bookstore-bookstore-order
@@ -29,17 +20,10 @@ services:
     ports:
       - "8082:8082"
     restart: unless-stopped
-    #    depends_on:
-    #      postgres-order:
-    #        condition: service_healthy
-    #      rabbitmq:
-    #        condition: service_healthy
     deploy:
       resources:
         limits:
           memory: 700m
-    labels:
-      logging: "promtail"
 
   bookstore-product:
     image: chensoul/bookstore-bookstore-product
@@ -49,15 +33,10 @@ services:
     ports:
       - "8083:8083"
     restart: unless-stopped
-    #    depends_on:
-    #      postgres-product:
-    #        condition: service_healthy
     deploy:
       resources:
         limits:
           memory: 700m
-    labels:
-      logging: "promtail"
 
   bookstore-webapp:
     image: chensoul/bookstore-webapp
@@ -71,5 +50,3 @@ services:
       resources:
         limits:
           memory: 700m
-    labels:
-      logging: "promtail"

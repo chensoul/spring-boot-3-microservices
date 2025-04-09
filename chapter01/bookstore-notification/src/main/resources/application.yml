@@ -13,9 +13,6 @@ notification.cancelled-order-queue: cancelled-order
 notification.error-order-queue: error-order
 notification.support-email: ichensoul@gmail.com
 
-management.endpoints.web.exposure.include: "*"
-management.metrics.tags.application: "${spring.application.name}"
-
 spring.mail.host: 127.0.0.1
 spring.mail.port: 1025
 spring.mail.username: PLACEHOLDER

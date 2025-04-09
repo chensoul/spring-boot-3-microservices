@@ -1,7 +1,6 @@
 package com.chensoul.bookstore.notification.config;
 
 import com.chensoul.bookstore.api.event.BookstoreEvent;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,11 +16,10 @@ public class RedisMessageConfiguration {
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory redisConnectionFactory, MessageListener messageListener) {
-        List<Topic> collection = new ArrayList<>();
-        ChannelTopic channelTopic = new ChannelTopic(BookstoreEvent.REDIS_CHANNEL);
-        collection.add(channelTopic);
         RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
         redisMessageListenerContainer.setConnectionFactory(redisConnectionFactory);
+
+        List<Topic> collection = List.of(new ChannelTopic(BookstoreEvent.REDIS_CHANNEL));
         redisMessageListenerContainer.addMessageListener(new MessageListenerAdapter(messageListener), collection);
         return redisMessageListenerContainer;
     }
