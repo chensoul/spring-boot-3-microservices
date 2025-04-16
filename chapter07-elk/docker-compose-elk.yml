@@ -1,6 +1,6 @@
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.3
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
@@ -22,7 +22,7 @@ services:
         hard: -1
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.17.2
+    image: docker.elastic.co/logstash/logstash:8.17.3
     container_name: logstash
     command: logstash -f /etc/logstash/conf.d/logstash.conf
     volumes:
@@ -34,7 +34,7 @@ services:
       - elasticsearch
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.17.2
+    image: docker.elastic.co/kibana/kibana:8.17.3
     container_name: kibana
     environment:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
