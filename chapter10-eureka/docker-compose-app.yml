@@ -1,6 +1,6 @@
 services:
   bookstore-notification:
-    image: chensoul/bookstore-bookstore-notification
+    image: chensoul/bookstore-notification
     container_name: bookstore-notification
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -13,7 +13,7 @@ services:
           memory: 700m
 
   bookstore-order:
-    image: chensoul/bookstore-bookstore-order
+    image: chensoul/bookstore-order
     container_name: bookstore-order
     environment:
       - SPRING_PROFILES_ACTIVE=docker
@@ -26,7 +26,7 @@ services:
           memory: 700m
 
   bookstore-product:
-    image: chensoul/bookstore-bookstore-product
+    image: chensoul/bookstore-product
     container_name: bookstore-product
     environment:
       - SPRING_PROFILES_ACTIVE=docker

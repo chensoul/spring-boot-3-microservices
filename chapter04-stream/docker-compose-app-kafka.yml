@@ -1,30 +1,30 @@
 services:
   bookstore-notification:
-    image: chensoul/bookstore-bookstore-notification
+    image: chensoul/bookstore-notification
     environment:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_0,kafka
 
   bookstore-notification-p1:
-    image: chensoul/bookstore-bookstore-notification
+    image: chensoul/bookstore-notification
     environment:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_1,kafka
 
   bookstore-order:
-    image: chensoul/bookstore-bookstore-order
+    image: chensoul/bookstore-order
     environment:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_0,kafka
 
   bookstore-order-p1:
-    image: chensoul/bookstore-bookstore-order
+    image: chensoul/bookstore-order
     environment:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=docker,streaming_partitioned,streaming_instance_1,kafka
 
   bookstore-product:
-    image: chensoul/bookstore-bookstore-product
+    image: chensoul/bookstore-product
     container_name: bookstore-product
     environment:
       - SPRING_PROFILES_ACTIVE=docker

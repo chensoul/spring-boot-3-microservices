@@ -35,19 +35,10 @@
 
 | 技术选型                                    | 使用版本     | 最新版本                                                                                                                                                                                                                                  | 备注 |
 |-----------------------------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----|
-| Java                                    | 21       | 23                                                                                                                                                                                                                                    |    |
-| Maven                                   | 3.9.9    | 3.9.9                                                                                                                                                                                                                                 |    |
-| PostgreSQL                              | 17       | 17                                                                                                                                                                                                                                    |    |
-| MongoDB                                 | 8.0.4    | 8.0.4                                                                                                                                                                                                                                 |    |
-| Rabbitmq                                | 4        | 4                                                                                                                                                                                                                                     |    |
-| Kafka                                   | 3.8      | 3.8                                                                                                                                                                                                                                   |    |
-| Kubernetes                              | 1.31     |                                                                                                                                                                                                                                       |    |
-| Grafana (Prometheus/Grafana/Loki/Tempo) |          |                                                                                                                                                                                                                                       |    |
-| ELK                                     | 8.17.2   |                                                                                                                                                                                                                                       |    |
-| Spring Boot                             | 3.4.2    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |    |
-| Spring Boot Admin                       | 3.4.2    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://repo1.maven.org/maven2/de/codecentric/spring-boot-admin-starter-server/maven-metadata.xml">                                   |    |
-| Spring Cloud                            | 2024.0.0 | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=202&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"> |    |
-| SpringDoc OpenAPI                       | 2.8.5    | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |    |
+| Spring Boot                             | 3.4.4        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |       |
+| Spring Cloud                            | 2024.0.1     | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=202&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"> |       |
+| SpringDoc OpenAPI                       | 2.8.6        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |       |
+| Spring Boot Admin                       | 3.4.5        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://repo1.maven.org/maven2/de/codecentric/spring-boot-admin-starter-server/maven-metadata.xml">                                   |       |
 
 ## 本地开发环境准备
 
@@ -144,11 +135,11 @@ Video：
 
 Code：
 
+- https://github.com/chensoul/spring-boot-microservices-course
 - https://github.com/chensoul/Microservices-with-Spring-Boot-and-Spring-Cloud-Third-Edition
 - https://github.com/eazybytes/microservices Grafana + Prometheus + Loki + Tempo
-- https://github.com/chensoul/spring-boot-3-microservices-course
+- https://github.com/abhisheksr01/spring-boot-microservice-best-practices
 - https://github.com/chensoul/spring-petclinic-microservices
-- https://github.com/chensoul/spring-boot-microservices-course
 - https://github.com/chensoul/spring-boot-3-microservices-course
 - https://github.com/in28minutes/spring-microservices-v3
 - https://github.com/ali-bouali/microservices-full-code
