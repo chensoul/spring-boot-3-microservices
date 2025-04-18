@@ -1,8 +1,8 @@
 package com.chensoul.bookstore.webapp.client;
 
+import com.chensoul.bookstore.webapp.ApplicationProperties;
 import com.chensoul.bookstore.webapp.client.order.OrderServiceClient;
 import com.chensoul.bookstore.webapp.client.product.ProductServiceClient;
-import com.chensoul.bookstore.webapp.config.ApplicationProperties;
 import java.time.Duration;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;

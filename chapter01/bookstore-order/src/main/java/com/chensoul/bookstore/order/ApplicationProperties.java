@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.order.config;
+package com.chensoul.bookstore.order;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

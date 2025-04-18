@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.notification.config;
+package com.chensoul.bookstore.notification;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

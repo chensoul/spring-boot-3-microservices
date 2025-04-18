@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class MessageReceiverListener implements MessageListener {
+class MessageReceiverListener implements MessageListener {
     private final OrderEventHandler orderEventHandler;
     private final ObjectMapper mapper;
 

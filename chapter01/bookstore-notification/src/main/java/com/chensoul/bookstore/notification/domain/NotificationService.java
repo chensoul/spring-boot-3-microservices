@@ -4,7 +4,7 @@ import com.chensoul.bookstore.api.order.OrderCancelledEvent;
 import com.chensoul.bookstore.api.order.OrderCreatedEvent;
 import com.chensoul.bookstore.api.order.OrderDeliveredEvent;
 import com.chensoul.bookstore.api.order.OrderErrorEvent;
-import com.chensoul.bookstore.notification.config.ApplicationProperties;
+import com.chensoul.bookstore.notification.ApplicationProperties;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

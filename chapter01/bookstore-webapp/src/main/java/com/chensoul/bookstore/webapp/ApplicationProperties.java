@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.webapp.config;
+package com.chensoul.bookstore.webapp;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
