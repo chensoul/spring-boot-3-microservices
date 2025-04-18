@@ -1,4 +1,4 @@
-![video_spider](https://socialify.git.ci/chensoul/spring-boot3-microservices/image?forks=1&issues=1&language=1&name=1&owner=1&stargazers=1&theme=Light)
+![](https://socialify.git.ci/chensoul/spring-boot3-microservices/image?forks=1&issues=1&language=1&name=1&owner=1&stargazers=1&theme=Light)
 
 <p align="center">
 <a href="README.md">English Documentation</a>
@@ -109,21 +109,6 @@ docker-compose -f docker-compose.yml -f docker-compose-app.yml up -d
 ```
 
 ### 使用 K8s 运行服务
-
-### 使用 Sonar 检测代码质量
-
-先通过 docker-compose.yml 启动本地 Sonar 服务器（可通过[http://localhost:9001](http://localhost:9001/)访问）：
-
-> 注意：我们已经关闭了 sonar.yml 中 UI 的强制身份验证重定向，以便在尝试 SonarQube 时获得开箱即用的体验，对于实际用例，请将其重新打开。
-
-然后，运行 Sonar 分析：
-
-```bash
-cd microservices
-mvn clean verify -DskipTests sonar:sonar -Dsonar.login=admin -Dsonar.password=admin
-```
-
-> Sonar 默认的用户名和密码为 admin/admin，如果你修改了密码，请使用新密码。
 
 ## 参考
 

@@ -1,4 +1,4 @@
-![video_spider](https://socialify.git.ci/chensoul/spring-boot-3-microservices/image?forks=1&issues=1&language=1&name=1&owner=1&stargazers=1&theme=Light)
+![](https://socialify.git.ci/chensoul/spring-boot-3-microservices/image?forks=1&issues=1&language=1&name=1&owner=1&stargazers=1&theme=Light)
 
 <p align="center">
 <a href="README_CN.md">中文文档</a>
