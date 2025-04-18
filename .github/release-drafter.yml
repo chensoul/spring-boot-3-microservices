@@ -1,0 +1,43 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: 'Breaking'
+    label: 'breaking'
+  - title: 'New feature'
+    label: 'feature'
+  - title: 'Bug Fixes'
+    label: 'bug'
+  - title: 'Documentation'
+    label: 'documentation'
+  - title: 'Maintenance'
+    label: 'maintenance'
+  - title: 'Other changes'
+  - title: 'Dependency Updates'
+    label: 'dependencies'
+    collapse-after: 5
+
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'documentation'
+      - 'dependencies'
+      - 'security'
+
+exclude-labels:
+  - 'skip-changelog'
+
+template: |
+  # What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
