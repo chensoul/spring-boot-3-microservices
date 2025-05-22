@@ -1,4 +1,4 @@
-package com.chensoul.bookstore.webapp.client.order;
+package com.chensoul.bookstore.webapp.client;
 
 import com.chensoul.bookstore.api.order.CreateOrderRequest;
 import com.chensoul.bookstore.api.order.CreateOrderResponse;

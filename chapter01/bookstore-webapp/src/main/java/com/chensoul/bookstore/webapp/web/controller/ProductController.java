@@ -2,7 +2,7 @@ package com.chensoul.bookstore.webapp.web.controller;
 
 import com.chensoul.bookstore.api.common.PagedResult;
 import com.chensoul.bookstore.api.product.Product;
-import com.chensoul.bookstore.webapp.client.product.ProductServiceClient;
+import com.chensoul.bookstore.webapp.client.ProductServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;

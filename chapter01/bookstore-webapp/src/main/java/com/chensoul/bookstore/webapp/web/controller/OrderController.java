@@ -4,7 +4,7 @@ import com.chensoul.bookstore.api.order.CreateOrderRequest;
 import com.chensoul.bookstore.api.order.CreateOrderResponse;
 import com.chensoul.bookstore.api.order.OrderDTO;
 import com.chensoul.bookstore.api.order.OrderSummary;
-import com.chensoul.bookstore.webapp.client.order.OrderServiceClient;
+import com.chensoul.bookstore.webapp.client.OrderServiceClient;
 import com.chensoul.bookstore.webapp.service.SecurityHelper;
 import jakarta.validation.Valid;
 import java.util.List;
