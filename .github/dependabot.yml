@@ -2,20 +2,18 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: "/"
-    target-branch: main
-    open-pull-requests-limit: 3
     schedule:
-      interval: weekly
-    labels:
-      - maintenance
-    commit-message:
-      prefix: "[DEPENDABOT]"
+      interval: "weekly"
+    open-pull-requests-limit: 10
 
-  - package-ecosystem: maven
+  - package-ecosystem: "maven"
     directory: "/"
-    target-branch: main
-    open-pull-requests-limit: 50
+    open-pull-requests-limit: 10
     schedule:
-      interval: daily
-      time: "00:00"
-      timezone: "Asia/Shanghai"
+      interval: "daily"
+    ignore:
+      # 忽略所有主要、次要版本更新
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor

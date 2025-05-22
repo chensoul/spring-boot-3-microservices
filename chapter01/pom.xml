@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version>
+        <version>3.4.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -28,7 +28,6 @@
         <wiremock-testcontainers.version>1.0-alpha-14</wiremock-testcontainers.version>
         <instancio.version>5.4.1</instancio.version>
 
-        <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
         <spotless-maven-plugin.version>2.44.4</spotless-maven-plugin.version>
     </properties>
 
@@ -179,51 +178,13 @@
                         </execution>
                     </executions>
                 </plugin>
-                <plugin>
-                    <groupId>com.google.cloud.tools</groupId>
-                    <artifactId>jib-maven-plugin</artifactId>
-                    <version>3.4.5</version>
-                    <configuration>
-                        <from>
-                            <image>eclipse-temurin:21-jre-jammy</image>
-                        </from>
-                        <to>
-                            <image>${env.USER}/bookstore-${project.artifactId}</image>
-                            <tags>
-                                <tag>latest</tag>
-                                <tag>${project.version}</tag>
-                            </tags>
-                        </to>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
             <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>${git-commit-id-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>get-the-git-infos</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <dateFormatTimeZone>${user.timezone}</dateFormatTimeZone>
-                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
-                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <!-- 设置 management.info.git.mode=full 时，需要指定 jackson 的日期时间序列化/反序列化格式 -->
-                    <dateFormat>yyyy-MM-dd HH:mm:ss</dateFormat>
-                    <includeOnlyProperties>
-                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.commit.(id|message|time).*$</includeOnlyProperty>
-                    </includeOnlyProperties>
-                </configuration>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
