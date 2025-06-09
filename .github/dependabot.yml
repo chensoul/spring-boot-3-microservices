@@ -12,7 +12,6 @@ updates:
     schedule:
       interval: "daily"
     ignore:
-      # 忽略所有主要、次要版本更新
       - dependency-name: "*"
         update-types:
           - version-update:semver-major

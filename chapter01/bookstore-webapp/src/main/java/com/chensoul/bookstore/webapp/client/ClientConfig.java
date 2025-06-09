@@ -1,7 +1,6 @@
 package com.chensoul.bookstore.webapp.client;
 
 import com.chensoul.bookstore.webapp.ApplicationProperties;
-
 import java.time.Duration;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
