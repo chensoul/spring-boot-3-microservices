@@ -49,15 +49,15 @@ Build resilient and scalable microservices using Spring Cloud, Istio, and Kubern
 
 | Tech stack                              | Used Version | Latest Version                                                                                                                                                                                                                        | Notes |
 |-----------------------------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|
-| Spring Boot                             | 3.5.0        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |       |
+| Spring Boot                             | 3.5.6        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/boot/spring-boot-dependencies/maven-metadata.xml">     |       |
 | Spring Cloud                            | 2025.0.0     | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=202&metadataUrl=https://s01.oss.sonatype.org/content/repositories/releases/org/springframework/cloud/spring-cloud-dependencies/maven-metadata.xml"> |       |
-| SpringDoc OpenAPI                       | 2.8.8        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |       |
+| SpringDoc OpenAPI                       | 2.8.13       | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&metadataUrl=https://oss.sonatype.org/content/repositories/releases/org/springdoc/springdoc-openapi/maven-metadata.xml">                                           |       |
 | Spring Boot Admin                       | 3.5.0        | <img src="https://img.shields.io/maven-metadata/v?label=&color=blue&versionPrefix=3&metadataUrl=https://repo1.maven.org/maven2/de/codecentric/spring-boot-admin-starter-server/maven-metadata.xml">                                   |       |
 
 
 ## Local Development Setup
 
-- Install Java 17 and Maven 3. Recommend using [SDKMAN](https://sdkman.io/).
+- Install Java 25 and Maven 3. Recommend using [SDKMAN](https://sdkman.io/).
 - Install [Docker](https://www.docker.com/). Recommend using [OrbStack](https://orbstack.dev/) for Macos.
 - Install [IntelliJ](https://www.jetbrains.com/idea) IDEA or any of your favorite IDE
 - Install [Postman](https://www.postman.com/) or any REST Client
