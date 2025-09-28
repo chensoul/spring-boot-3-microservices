@@ -70,7 +70,7 @@ services:
           memory: 1gb
 
   kafka:
-    image: confluentinc/cp-kafka:7.9.0
+    image: confluentinc/cp-kafka:7.9.3
     container_name: kafka
     ports:
       - "9092:9092"
