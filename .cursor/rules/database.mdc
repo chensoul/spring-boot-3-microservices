@@ -1,0 +1,194 @@
+---
+alwaysApply: true
+---
+
+# 数据库开发规范
+
+- **目标**：MySQL + MyBatis Plus 数据库开发的最佳实践
+- **适用范围**：基于 Spring Boot + MyBatis Plus + MySQL 的数据访问层开发
+- **优先级**：强制遵循；代码评审与 CI 按此规则执行
+
+## 一、MyBatis Plus 规范
+
+### 1. 实体与映射
+
+* @TableName/@TableId/@TableField 映射完整；字段命名与数据库下划线一致（自动驼峰转换确认）
+* 逻辑删除（@TableLogic）、乐观锁（@Version）、审计字段（createTime/updateTime）策略已配置并生效
+* MyBatis-Plus 自动填充（MetaObjectHandler）用于审计字段；避免在业务代码手工维护时间
+* 严禁实体包含业务逻辑；禁止循环/双向膨胀关联；关联通过明确查询实现
+
+### 2. Mapper 与 XML
+
+* Mapper 类严禁使用注解式 SQL（@Select/@Update/@Delete/@Insert 等）；统一使用 MyBatis-Plus 提供的方法与 Wrapper 条件构造
+* 严禁编写 Mapper XML 文件与动态 SQL
+* 保持持久层简单、可维护、与数据库弱绑定
+
+### 3. 查询与分页
+
+* 分页统一使用 MyBatis-Plus 分页插件；禁止手写 limit 偏移造成全表扫描（自 v3.5.9 起需引入 `mybatis-plus-jsqlparser` 依赖以启用 `PaginationInnerInterceptor`）
+* 必须注册 MybatisPlusInterceptor：包含 PaginationInnerInterceptor、OptimisticLockerInnerInterceptor（@Version）、BlockAttackInnerInterceptor（防止全表更新/删除）
+* 条件构造统一使用 LambdaQueryWrapper/LambdaUpdateWrapper；避免字符串拼 SQL 与注入风险
+* 逻辑删除已开启时，严禁在条件构造中手动添加 deleted/is_deleted 等逻辑删除字段条件；框架自动处理
+* 大结果集采用游标/流式处理或分片拉取；查询超时与最大行数限制已配置
+
+### 4. 写入与批处理
+
+* 批量写入使用 saveBatch()/ExecutorType.BATCH；控制批大小（如 500-1000）与事务边界；避免 OOM
+* 插入/更新仅写必要字段，避免全字段更新；更新语句 set 列表使用 <set> 自动去空
+* 唯一约束冲突有幂等处理（如 upsert/先查后插/分布式锁）
+
+### 5. 事务与一致性
+
+* Service 层方法具备明确事务注解；跨资源使用最终一致性/补偿方案；禁止在事务内远程调用
+* 主键生成策略统一（雪花/序列/DB 自增）；时区与时序一致性校验（UTC 存储）
+
+### 6. 性能与监控
+
+* 启用 MyBatis 日志/慢 SQL 监控；对慢查询建立告警与基线（TP90/TP99）
+* HikariCP 连接池参数依据负载与 DB 限额配置；池耗尽保护与指标上报到可观测平台
+
+## 二、MySQL 规范
+
+### 1. 表与字段设计
+
+* 表名使用英文小写+下划线，单数形式（如 user 非 users）；避免 MySQL 保留字；每个表有主键
+* 字段命名简洁明了，使用英文小写+下划线；避免冗余前缀；主键统一 id；时间字段 created_time/updated_time
+* 字符集统一 utf8mb4；排序规则统一 utf8mb4_general_ci；根据数据范围选择合适类型（TINYINT/SMALLINT/INT/BIGINT）；金额字段使用 DECIMAL
+* 重要字段 NOT NULL 约束；表和字段有 COMMENT 注释；遵循第三范式避免数据冗余
+* 运行参数：binlog_format=ROW，sql_mode=STRICT_TRANS_TABLES；统一时区 UTC；隔离级别 REPEATABLE READ
+
+### 2. 索引设计与优化
+
+* 索引命名规范：idx_表名_字段名（单字段）、idx_表名_字段1_字段2（复合）、uk_表名_字段名（唯一）
+* 复合索引字段顺序考虑查询频率与选择性；避免创建重复索引
+* 禁用外键约束，但保留外键列与相应索引以保障查询性能与数据治理
+* 查询覆盖索引使用；长字段前缀索引；避免 SELECT *；WHERE/ORDER BY/GROUP BY 字段有索引支撑
+
+### 3. SQL 性能与规范
+
+* 慢 SQL 监控与优化：查询时间超过 1s 告警；使用 EXPLAIN 分析执行计划；避免全表扫描
+* 禁止在 WHERE 中使用函数、隐式类型转换、前缀模糊查询；合理使用 LIMIT 分页
+* 批量操作控制大小（如 500-1000 行）；大表 DDL 变更使用在线工具（gh-ost/pt-online-schema-change）
+
+### 4. 事务与并发控制
+
+* 事务范围最小化；避免长事务锁表；读写分离场景注意主从延迟一致性
+* 死锁检测与重试机制；高并发场景使用乐观锁（版本号）或分布式锁
+* 事务隔离级别与业务场景匹配；避免幻读与不可重复读问题
+
+### 5. 容量规划与监控
+
+* 表容量预估与分片策略（垂直/水平）；单表行数控制在合理范围（建议 < 500w）
+* 监控指标：QPS/TPS、慢查询数量、连接数、锁等待、主从延迟；设置告警阈值
+* 定期备份与恢复演练；binlog 保留策略；数据归档与清理机制
+
+### 6. 安全与合规
+
+* 数据库权限最小化；敏感字段加密存储；访问审计日志完备
+* SQL 注入防护；输入参数化查询；避免动态 SQL 拼接
+* 生产环境禁止 DDL 直接操作；变更通过工单与审核流程
+
+## 三、数据访问最佳实践
+
+### 1. 查询优化
+
+```java
+// 推荐：使用 LambdaQueryWrapper
+LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
+    .eq(User::getStatus, 1)
+    .like(User::getName, "张")
+    .orderByDesc(User::getCreateTime);
+
+// 避免：字符串拼接
+QueryWrapper<User> wrapper = new QueryWrapper<User>()
+    .eq("status", 1)
+    .like("name", "张");
+```
+
+### 2. 分页查询
+
+```java
+// 推荐：使用 Page 对象
+Page<User> page = new Page<>(1, 20);
+Page<User> result = userService.page(page, wrapper);
+
+// 避免：手动计算 offset
+int offset = (page - 1) * size;
+List<User> users = userMapper.selectList(wrapper.last("LIMIT " + offset + ", " + size));
+```
+
+### 3. 批量操作
+
+```java
+// 推荐：使用 saveBatch
+List<User> users = Arrays.asList(user1, user2, user3);
+userService.saveBatch(users, 1000); // 每批1000条
+
+// 避免：循环单条插入
+for (User user : users) {
+    userService.save(user);
+}
+```
+
+### 4. 事务管理
+
+```java
+// 推荐：在 Service 层定义事务
+@Service
+@Transactional(rollbackFor = Exception.class)
+public class UserServiceImpl implements UserService {
+    
+    @Transactional(readOnly = true)
+    public User getById(Long id) {
+        return userMapper.selectById(id);
+    }
+    
+    public void updateUser(User user) {
+        userMapper.updateById(user);
+    }
+}
+```
+
+## 四、性能监控与调优
+
+### 1. 慢查询监控
+
+```yaml
+# application.yaml
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+```
+
+### 2. 连接池配置
+
+```yaml
+# application.yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+```
+
+### 3. 监控指标
+
+* 连接池使用率
+* 慢查询数量
+* 事务执行时间
+* 死锁检测
+* 主从延迟
+
+---
+
+**适用场景**：所有使用 MySQL + MyBatis Plus 的 Spring Boot 项目，无论项目复杂度如何，都应遵循此数据库开发规范。

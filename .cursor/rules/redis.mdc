@@ -1,0 +1,422 @@
+---
+alwaysApply: true
+---
+# Redis 缓存开发规范
+
+- **目标**：Redis 缓存使用的最佳实践和性能优化
+- **适用范围**：基于 Spring Boot + Spring Data Redis/Redisson 的缓存开发
+- **优先级**：强制遵循；代码评审与 CI 按此规则执行
+
+## 一、Key 设计与序列化
+
+### 1. Key 命名规范
+
+* Key 统一前缀：`{env}:{app}:{domain}:{resource}:{id}`，避免高基数字段进入前缀
+* 示例：
+  - `prod:user-service:user:profile:12345`
+  - `test:order-service:order:detail:67890`
+  - `dev:payment-service:payment:session:abc123`
+
+### 2. 序列化配置
+
+* 统一序列化：StringRedisSerializer + Jackson2JsonRedisSerializer；禁用 JDK 序列化
+* Jackson2JsonRedisSerializer：注册 JavaTimeModule、禁用默认类型信息，显式序列化
+* JSON 序列化字段显式版本控制（@JsonTypeInfo 禁用）；兼容性升级策略明确
+
+```java
+@Configuration
+public class RedisConfig {
+    
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        
+        // Key 序列化
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        
+        // Value 序列化
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        serializer.setObjectMapper(mapper);
+        
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
+        
+        return template;
+    }
+}
+```
+
+## 二、TTL 与容量管理
+
+### 1. TTL 策略
+
+* 所有缓存写入设置 TTL，默认不超过 7 天；不同类型数据有独立 TTL 策略与随机抖动
+* TTL 应通过 `application.yaml` 配置，禁止在代码中硬编码
+* 缓存 TTL 建议增加 5%-10% 随机抖动，避免缓存雪崩
+
+```yaml
+# application.yaml
+spring:
+  cache:
+    redis:
+      time-to-live: 3600000  # 1小时
+      cache-null-values: false
+      key-prefix: "app:cache:"
+      use-key-prefix: true
+```
+
+### 2. 容量管理
+
+* 内存水位监控与淘汰策略配置（建议 allkeys-lru/lfu）；超阈值报警
+* 禁止在生产路径使用 KEYS/SCAN 大范围遍历；后台工具类库进行维护操作
+* Lettuce 客户端应配置 command timeout、连接池（max-active/max-idle/min-idle）
+
+```yaml
+# application.yaml
+spring:
+  redis:
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+      shutdown-timeout: 200ms
+    timeout: 1000ms
+```
+
+## 三、缓存三难问题防护
+
+### 1. 缓存雪崩
+
+* TTL 加随机、预热热点、分散重建；必要时使用多级缓存（Caffeine + Redis）
+* 实现方案：
+
+```java
+@Service
+public class UserService {
+    
+    @Cacheable(value = "user", key = "#id", unless = "#result == null")
+    public User getUserById(Long id) {
+        return userMapper.selectById(id);
+    }
+    
+    // 缓存预热
+    @EventListener(ApplicationReadyEvent.class)
+    public void warmUpCache() {
+        List<User> hotUsers = getHotUsers();
+        hotUsers.forEach(user -> {
+            redisTemplate.opsForValue().set(
+                "user:" + user.getId(), 
+                user, 
+                Duration.ofMinutes(30 + new Random().nextInt(10))
+            );
+        });
+    }
+}
+```
+
+### 2. 缓存穿透
+
+* 对不存在的 key 缓存空值（短 TTL），或引入布隆过滤器
+* 实现方案：
+
+```java
+@Service
+public class UserService {
+    
+    public User getUserById(Long id) {
+        String key = "user:" + id;
+        User user = (User) redisTemplate.opsForValue().get(key);
+        
+        if (user != null) {
+            return user;
+        }
+        
+        // 防止缓存穿透：缓存空值
+        if ("NULL".equals(redisTemplate.opsForValue().get(key + ":null"))) {
+            return null;
+        }
+        
+        user = userMapper.selectById(id);
+        if (user != null) {
+            redisTemplate.opsForValue().set(key, user, Duration.ofHours(1));
+        } else {
+            // 缓存空值，短TTL
+            redisTemplate.opsForValue().set(key + ":null", "NULL", Duration.ofMinutes(5));
+        }
+        
+        return user;
+    }
+}
+```
+
+### 3. 缓存击穿
+
+* 热点 key 使用互斥锁/逻辑过期防抖；异步重建与过期兜底
+* 实现方案：
+
+```java
+@Service
+public class UserService {
+    
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedissonClient redissonClient;
+    
+    public User getUserById(Long id) {
+        String key = "user:" + id;
+        User user = (User) redisTemplate.opsForValue().get(key);
+        
+        if (user != null) {
+            return user;
+        }
+        
+        // 分布式锁防止缓存击穿
+        RLock lock = redissonClient.getLock("lock:user:" + id);
+        try {
+            if (lock.tryLock(10, TimeUnit.SECONDS)) {
+                // 双重检查
+                user = (User) redisTemplate.opsForValue().get(key);
+                if (user != null) {
+                    return user;
+                }
+                
+                user = userMapper.selectById(id);
+                if (user != null) {
+                    redisTemplate.opsForValue().set(key, user, Duration.ofHours(1));
+                }
+            }
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+        
+        return user;
+    }
+}
+```
+
+## 四、分布式锁与并发
+
+### 1. 分布式锁实现
+
+* 分布式锁使用 Redisson 或原子 set nx px + 校验释放；超时时间与业务耗时匹配；避免死锁
+* 锁粒度与范围可控；不可重入场景显式限制；失败与重试策略明确
+
+```java
+@Service
+public class OrderService {
+    
+    private final RedissonClient redissonClient;
+    
+    public void processOrder(Long orderId) {
+        String lockKey = "lock:order:" + orderId;
+        RLock lock = redissonClient.getLock(lockKey);
+        
+        try {
+            // 尝试获取锁，最多等待10秒，锁持有时间30秒
+            if (lock.tryLock(10, 30, TimeUnit.SECONDS)) {
+                // 业务逻辑
+                doProcessOrder(orderId);
+            } else {
+                throw new BusinessException("获取锁失败，请稍后重试");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException("处理订单被中断");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+}
+```
+
+### 2. 限流实现
+
+```java
+@Component
+public class RateLimiter {
+    
+    private final RedissonClient redissonClient;
+    
+    public boolean isAllowed(String key, int maxRequests, Duration window) {
+        RRateLimiter rateLimiter = redissonClient.getRateLimiter("rate_limit:" + key);
+        rateLimiter.trySetRate(RateType.OVERALL, maxRequests, window.toMillis(), RateIntervalUnit.MILLISECONDS);
+        return rateLimiter.tryAcquire();
+    }
+}
+```
+
+## 五、一致性与回源策略
+
+### 1. 缓存更新策略
+
+* DB 写 -> 删缓存 -> 最终一致性修复（Binlog/消息）；避免先删后写的竞态
+* 双写或订阅机制具备幂等与去重；异常场景有回滚或重建策略
+
+```java
+@Service
+public class UserService {
+    
+    @Transactional
+    public void updateUser(User user) {
+        // 1. 更新数据库
+        userMapper.updateById(user);
+        
+        // 2. 删除缓存
+        redisTemplate.delete("user:" + user.getId());
+        
+        // 3. 发送消息通知其他服务更新缓存
+        messagePublisher.publish("user.updated", user.getId());
+    }
+    
+    @EventListener
+    public void handleUserUpdated(UserUpdatedEvent event) {
+        // 异步更新缓存
+        CompletableFuture.runAsync(() -> {
+            User user = userMapper.selectById(event.getUserId());
+            if (user != null) {
+                redisTemplate.opsForValue().set("user:" + user.getId(), user, Duration.ofHours(1));
+            }
+        });
+    }
+}
+```
+
+### 2. 缓存预热策略
+
+```java
+@Component
+public class CacheWarmUpService {
+    
+    @EventListener(ApplicationReadyEvent.class)
+    public void warmUpCache() {
+        // 预热热点数据
+        List<Long> hotUserIds = getHotUserIds();
+        hotUserIds.parallelStream().forEach(userId -> {
+            User user = userMapper.selectById(userId);
+            if (user != null) {
+                redisTemplate.opsForValue().set("user:" + userId, user, Duration.ofHours(1));
+            }
+        });
+    }
+}
+```
+
+## 六、监控与告警
+
+### 1. 监控指标
+
+* 命中率、QPS、慢查询、失败率、连接池、命令超时；可视化与告警
+* 异常：连接超时、反序列化失败、内存不足等都应有明确日志与 retry/backoff
+
+```java
+@Component
+public class RedisMetrics {
+    
+    private final MeterRegistry meterRegistry;
+    private final RedisTemplate<String, Object> redisTemplate;
+    
+    @EventListener
+    public void onApplicationReady(ApplicationReadyEvent event) {
+        // 注册 Redis 监控指标
+        Gauge.builder("redis.connection.active")
+            .register(meterRegistry, redisTemplate, template -> {
+                // 获取连接池活跃连接数
+                return getActiveConnections();
+            });
+    }
+}
+```
+
+### 2. 健康检查
+
+```java
+@Component
+public class RedisHealthIndicator implements HealthIndicator {
+    
+    private final RedisTemplate<String, Object> redisTemplate;
+    
+    @Override
+    public Health health() {
+        try {
+            String result = redisTemplate.execute((RedisCallback<String>) connection -> {
+                return connection.ping();
+            });
+            
+            if ("PONG".equals(result)) {
+                return Health.up()
+                    .withDetail("redis", "Available")
+                    .build();
+            } else {
+                return Health.down()
+                    .withDetail("redis", "Unavailable")
+                    .build();
+            }
+        } catch (Exception e) {
+            return Health.down()
+                .withDetail("redis", "Error: " + e.getMessage())
+                .build();
+        }
+    }
+}
+```
+
+## 七、最佳实践
+
+### 1. 缓存注解使用
+
+```java
+@Service
+public class UserService {
+    
+    @Cacheable(value = "user", key = "#id", unless = "#result == null")
+    public User getUserById(Long id) {
+        return userMapper.selectById(id);
+    }
+    
+    @CacheEvict(value = "user", key = "#user.id")
+    public void updateUser(User user) {
+        userMapper.updateById(user);
+    }
+    
+    @CachePut(value = "user", key = "#user.id")
+    public User saveUser(User user) {
+        userMapper.insert(user);
+        return user;
+    }
+}
+```
+
+### 2. 缓存配置
+
+```java
+@Configuration
+@EnableCaching
+public class CacheConfig {
+    
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofHours(1))
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        
+        return RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(config)
+            .build();
+    }
+}
+```
+
+---
+
+**适用场景**：所有使用 Redis 缓存的 Spring Boot 项目，无论项目复杂度如何，都应遵循此 Redis 缓存开发规范。

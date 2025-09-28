@@ -1,0 +1,148 @@
+---
+alwaysApply: true
+---
+# Spring Boot 核心开发规范
+
+- **目标**：Spring Boot 项目的基础开发规范，适用于所有 Spring Boot 项目
+- **适用范围**：基于 Spring Boot 的后端应用开发
+- **优先级**：强制遵循；代码评审与 CI 按此规则执行
+
+## 一、通用工程原则
+
+- **SOLID/DRY/KISS/YAGNI/关注点分离**：严格遵循，避免过度设计与重复实现
+- **模块边界清晰**：控制器仅处理 HTTP/校验/响应封装；业务在服务层；数据访问在 Mapper
+- **向后兼容**：新增面向扩展，禁止破坏既有对外契约（DTO、API、配置键）
+- **失败即早**：非法参数立即校验并抛出；避免静默失败
+
+## 二、代码风格与复杂度
+
+### 命名规范
+- 包：`com.company.project.module`
+- 类：`XXService/XXServiceImpl/XXController/XXMapper/XXEntity`。类名使用单数，不要使用复数
+- 方法：查询 `getBy*/findBy*/list*/page*/countBy*`；判断 `is/exists/has`；操作 `create*/update*/delete*`
+- 变量：语义化、用完整单词；常量全大写下划线
+
+### 结构规范
+- 单文件 ≤ 500 行；单方法 ≤ 50 行；圈复杂度 ≤ 10；方法参数 ≤ 5 个
+- 优先早返回；避免 3 层以上深度嵌套
+- 代码块需要添加花括号
+
+### 注释规范
+- 复杂业务/非直观逻辑必须中文注释，写"为什么"不是"怎么做"
+- 公共接口/DTO/异常类添加 Javadoc
+
+### 格式化规范
+- 由 Spotless 管控；提交前必须通过 `mvn spotless:apply`；在 `` 下强制执行
+
+### 语言与数据类型
+- **Lombok**：禁止在实体类上使用 @Data，推荐 @Getter/@Setter/@Builder；显式 equals/hashCode 策略避免主键/延迟加载陷阱
+- **时间**：统一使用 UTC 存储；边界层（Controller/外部接口）进行时区转换；优先使用 Instant/ZonedDateTime 表达时间含义
+- **金额**：统一使用 BigDecimal，约定精度与舍入模式；禁止使用浮点类型表示金额
+
+## 三、Spring Boot 核心规范
+
+### 1. 依赖注入与组件可见性
+
+* 统一使用构造器注入，依赖字段 final；禁止字段/Setter 注入
+* 如果只有一个构造函数，Spring 将自动检测，无需在构造函数上添加 `@Autowired`
+* 避免在生产代码中注入字段/设置器
+* 组件默认 package-private，可见性最小化；仅暴露必要 Bean
+* Prototype/Request/Session Scope 使用受控；禁止在多线程持有非单例 Bean
+
+### 2. 配置管理
+
+* application.yaml 按环境分层；敏感配置通过环境变量/密钥管理器注入；禁写入仓库与日志
+* 业务参数优先用配置（如 Redis TTL），不在代码中硬编码
+* 所有自定义配置绑定到 @ConfigurationProperties，使用 @Validated 进行约束校验，提供默认值
+* 禁止零散 @Value 注入；统一前缀分组，文档化配置项与默认值
+
+### 3. 线程池与超时基线
+
+* **超时基线**：
+    - HTTP 客户端：连接 500ms、读取 2s
+    - 数据库：连接超时 2s、查询超时 2-5s（按场景）
+    - Redis：命令超时 1s
+    - 跨服务调用必须设置超时与重试上限
+* **参数外置**：所有超时与线程池参数必须通过配置暴露，按环境覆盖；禁止硬编码
+
+### 4. 事务边界
+
+* 读操作显式 @Transactional(readOnly = true)；写操作 @Transactional(rollbackFor = Exception.class)
+* 事务范围最小化；禁止在单事务内发起远程调用；必要时采用补偿/Saga
+* 只在 Service 层定义事务；Controller/DAO 层不直接控制事务
+
+### 5. Web 层规范
+
+* Controller 保持瘦身：无业务逻辑；DTO + Jakarta Validation
+* 分页统一使用 MyBatis-Plus 的 `Page` 模型：Controller/Service 入参采用 `Page<?>`对象，返回 `Page<T>`；禁止直接返回实体
+* 使用命令对象（例如"CreateOrderCommand"）进行业务操作
+
+### 6. REST API 设计原则
+
+* **版本化、面向资源的 URL**：将端点构造为 `/api/v{version}/resources`（例如 `/api/v1/orders`）
+* **集合和子资源的一致模式**：保持 URL 约定统一（例如，帖子集合使用 `/posts`，特定帖子的评论使用 `/posts/{slug}/comments`）
+* **分页约束**：默认 pageSize=20，最大不超过 100；禁止无上限拉取
+* **排序约束**：采用白名单字段与默认稳定排序；禁止直接透传数据库字段名
+* **幂等性**：对关键 POST/支付/订单等操作，客户端需提供 Idempotency-Key；服务端在 5-10 分钟窗口内去重并返回首次结果
+
+### 7. 安全基础
+
+* Spring Security 最小权限：启用方法级鉴权（@PreAuthorize），细粒度基于角色/权限串
+* 认证与会话：推荐 JWT/OAuth2，签名密钥轮换；令牌最短可用期与刷新策略明确
+* 秘密与凭据：集中管理（Vault/环境变量），git/secrets 扫描；禁止在日志/配置中明文
+* 输入输出安全：XSS/SQL 注入/路径遍历防护；文件上传大小/类型限制与存储隔离；CORS 最小化策略
+
+### 8. 日志与可观测性
+
+**日志规范**：
+* 切勿使用 `System.out.println()` 进行应用程序日志记录，使用 SLF4J + Logback
+* 严禁打印敏感信息；必要时脱敏（手机号、邮箱、证件号等）
+* 日志分级：ERROR/WARN/INFO/DEBUG；异常日志必须含上下文与堆栈
+* 调试日志包装 isDebugEnabled
+* TraceId 贯穿；日志中透传 MDC/traceId；可选启用虚拟线程需验证 MDC 透传
+
+**可观测性**：
+* Actuator 仅开放 /health /info /metrics；其余需鉴权
+* 优雅停机、Readiness/Liveness 探针配置完备并通过演练
+* 为关键操作添加业务埋点、指标与告警阈值。建议使用 Micrometer + Spring Boot Actuator 暴露指标
+
+### 9. 版本与依赖管理
+
+* Java 与构建基线：最低 JDK 版本为 Java 21（LTS）；Maven 使用 Toolchains 或 maven-compiler-plugin（release/target=21）
+* 启用 spring-boot-configuration-processor 生成配置元数据
+* 使用父 POM/BOM 锁定版本：Spring Boot 3.5.x、Spring Cloud 2025.0.x、MyBatis-Plus 3.5.12+
+* 根 POM 统一 properties 管理版本（如 spring-boot.version、spring-cloud.version、mybatis-plus.version）
+* 建立依赖升级机制：优先使用 Renovate（或月度人工巡检），禁止长期滞后
+
+### 10. 本地开发环境
+
+* 仓库根提供 docker-compose.yaml 与 .env.example，包含 MySQL/Redis/RabbitMQ 的默认配置与持久化卷
+* 构建镜像可使用 spring-boot-maven-plugin 的 build-image（Paketo Buildpacks），无需 Dockerfile
+* 禁止提交生产凭据；敏感变量通过环境注入
+
+## 四、异常处理与错误管理
+
+### 1. 异常分层与传播
+
+* 异常分层：系统异常（SystemException）、业务异常（BusinessException）、参数异常（ValidationException）、外部异常（ExternalException）
+* 异常传播：Controller 层统一捕获并转换为标准响应；Service 层抛出业务异常；DAO 层异常向上传播
+* 异常日志：ERROR 级别记录系统异常和外部异常；WARN 级别记录业务异常；包含完整堆栈和上下文信息
+
+### 2. 全局异常处理
+
+* 使用 @RestControllerAdvice 统一处理异常；区分不同异常类型返回对应错误码
+* 统一响应：`ApiResponse<T>`（不采用 RFC7807），字段包括 code（Integer）、message（String，可国际化）、data（泛型，可为 null）、success（boolean）
+    - 错误码分配：0（成功）；1000-1999（校验/客户端）；2000-2999（业务规则）；3000-3999（鉴权/权限）；4000-4999（资源/配额/并发冲突）；5000-5999（下游/外部系统）；9000-9999（系统内部错误）
+    - 每个模块维护错误码清单（README 或 docs/error-codes.md），避免冲突；traceId 通过响应头（如 X-Trace-Id）透传，必要时在响应体回显
+    - 敏感信息不暴露给前端
+* 参数校验异常统一处理：@Valid/@Validated 校验失败返回详细字段错误信息
+
+### 3. 重试与容错
+
+* 对于外部服务调用，实施指数退避重试策略；设置最大重试次数和超时时间
+* 使用 @Retryable 或 Resilience4j 实现重试；仅对幂等操作和临时性错误进行重试
+* 提供降级和熔断机制；关键业务路径有备选方案
+
+---
+
+**适用场景**：所有基于 Spring Boot 的后端应用项目，无论项目复杂度如何，都应遵循此核心规范。

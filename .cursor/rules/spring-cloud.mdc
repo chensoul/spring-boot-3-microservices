@@ -1,0 +1,430 @@
+---
+alwaysApply: false
+---
+# 微服务开发规范
+
+- **目标**：微服务架构的最佳实践和开发规范
+- **适用范围**：基于 Spring Boot + Spring Cloud 的微服务项目
+- **优先级**：可选遵循；仅在采用微服务架构时适用
+- **前置条件**：团队规模 > 20人，业务复杂度高，需要独立部署
+
+## 一、服务拆分与边界
+
+### 1. 服务拆分原则
+
+* 按业务域拆分；单一职责原则；避免过度拆分
+* 服务边界：明确服务间的依赖关系；避免循环依赖
+* 数据一致性：每个服务管理自己的数据；跨服务数据通过事件同步
+
+### 2. 服务识别方法
+
+* **按业务能力拆分**：用户服务、订单服务、支付服务、商品服务
+* **按数据所有权拆分**：每个服务拥有自己的数据库
+* **按团队结构拆分**：每个团队负责一个或多个服务
+* **按技术栈拆分**：不同服务可以使用不同的技术栈
+
+### 3. 服务边界设计
+
+```java
+// 用户服务 - 负责用户相关业务
+@Service
+public class UserService {
+    // 用户注册、登录、信息管理
+}
+
+// 订单服务 - 负责订单相关业务
+@Service
+public class OrderService {
+    // 订单创建、查询、状态管理
+}
+
+// 支付服务 - 负责支付相关业务
+@Service
+public class PaymentService {
+    // 支付处理、退款、对账
+}
+```
+
+## 二、服务发现与注册
+
+### 1. 服务注册中心
+
+* 使用服务注册中心（Eureka/Consul/Nacos）；服务启动时自动注册
+* 健康检查：定期检查服务健康状态；不健康服务自动下线
+* 负载均衡：使用客户端负载均衡；支持多种负载均衡策略
+
+### 2. Eureka 配置
+
+```yaml
+# application.yaml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+```
+
+### 3. 服务注册
+
+```java
+@SpringBootApplication
+@EnableEurekaClient
+public class UserServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(UserServiceApplication.class, args);
+    }
+}
+```
+
+## 三、API 网关
+
+### 1. 网关配置
+
+* 统一入口：所有外部请求通过 API 网关；内部服务间直接通信
+* 路由规则：基于路径、请求头等条件路由；支持版本控制和灰度发布
+* 横切关注点：认证授权、限流熔断、日志监控在网关层统一处理
+
+### 2. Spring Cloud Gateway 配置
+
+```yaml
+# application.yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - StripPrefix=3
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - StripPrefix=3
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+```
+
+### 3. 网关过滤器
+
+```java
+@Component
+public class AuthGatewayFilterFactory extends AbstractGatewayFilterFactory<AuthGatewayFilterFactory.Config> {
+    
+    @Override
+    public GatewayFilter apply(Config config) {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+            String token = request.getHeaders().getFirst("Authorization");
+            
+            if (token == null) {
+                return unauthorized(exchange);
+            }
+            
+            // 验证 token
+            if (validateToken(token)) {
+                return chain.filter(exchange);
+            } else {
+                return unauthorized(exchange);
+            }
+        };
+    }
+    
+    private Mono<Void> unauthorized(ServerWebExchange exchange) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        return response.setComplete();
+    }
+}
+```
+
+## 四、服务间通信
+
+### 1. OpenFeign 配置
+
+* 为每个 FeignClient 设置连接/读超时（例如 500ms/2s，视业务调整）；禁用全局无限超时
+* 重试仅用于幂等 GET/HEAD；限制重试次数与退避策略；对 POST/PUT 默认不重试
+
+```java
+@FeignClient(name = "user-service", 
+             url = "${user.service.url}",
+             configuration = FeignConfig.class)
+public interface UserServiceClient {
+    
+    @GetMapping("/api/v1/users/{id}")
+    User getUserById(@PathVariable("id") Long id);
+    
+    @PostMapping("/api/v1/users")
+    User createUser(@RequestBody CreateUserRequest request);
+}
+```
+
+### 2. Feign 配置
+
+```java
+@Configuration
+public class FeignConfig {
+    
+    @Bean
+    public Retryer retryer() {
+        return new Retryer.Default(100, 1000, 3);
+    }
+    
+    @Bean
+    public RequestInterceptor requestInterceptor() {
+        return requestTemplate -> {
+            // 添加认证头
+            String token = getCurrentToken();
+            requestTemplate.header("Authorization", "Bearer " + token);
+        };
+    }
+}
+```
+
+### 3. 熔断与降级
+
+```java
+@Component
+public class UserServiceFallback implements UserServiceClient {
+    
+    @Override
+    public User getUserById(Long id) {
+        return User.builder()
+            .id(id)
+            .name("用户服务暂时不可用")
+            .build();
+    }
+    
+    @Override
+    public User createUser(CreateUserRequest request) {
+        throw new ServiceUnavailableException("用户服务暂时不可用");
+    }
+}
+```
+
+## 五、配置管理
+
+### 1. 配置中心
+
+* 集中配置：使用配置中心管理所有服务配置；支持配置热更新
+* 环境隔离：不同环境使用不同配置；避免配置混乱
+* 敏感信息：使用加密存储；运行时解密
+
+### 2. Spring Cloud Config 配置
+
+```yaml
+# bootstrap.yaml
+spring:
+  application:
+    name: user-service
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        max-interval: 2000
+        multiplier: 1.1
+```
+
+### 3. 配置刷新
+
+```java
+@RestController
+@RefreshScope
+public class UserController {
+    
+    @Value("${user.default.role:USER}")
+    private String defaultRole;
+    
+    @GetMapping("/config")
+    public String getConfig() {
+        return "Default role: " + defaultRole;
+    }
+}
+```
+
+## 六、分布式事务
+
+### 1. Saga 模式
+
+* 使用 Saga 模式处理分布式事务；避免两阶段提交的复杂性
+* 每个服务维护自己的事务状态；通过事件协调事务
+
+```java
+@Service
+public class OrderSagaService {
+    
+    @SagaOrchestrationStart
+    public void startOrderSaga(OrderCreatedEvent event) {
+        // 1. 创建订单
+        orderService.createOrder(event.getOrder());
+        
+        // 2. 预留库存
+        sagaManager.choreography()
+            .step()
+            .invokeLocal(this::reserveInventory)
+            .compensate(this::releaseInventory)
+            .step()
+            .invokeParticipant("payment-service", this::processPayment)
+            .compensate(this::refundPayment)
+            .step()
+            .invokeLocal(this::confirmOrder)
+            .build()
+            .execute();
+    }
+}
+```
+
+### 2. 事件驱动架构
+
+```java
+@Component
+public class OrderEventHandler {
+    
+    @EventListener
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        // 发送事件到其他服务
+        eventPublisher.publishEvent(new InventoryReservationRequestedEvent(event.getOrder()));
+    }
+    
+    @EventListener
+    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+        // 处理支付完成事件
+        orderService.updateOrderStatus(event.getOrderId(), OrderStatus.PAID);
+    }
+}
+```
+
+## 七、服务监控
+
+### 1. 链路追踪
+
+```java
+@RestController
+public class UserController {
+    
+    @GetMapping("/users/{id}")
+    public User getUserById(@PathVariable Long id) {
+        // 自动生成 traceId
+        return userService.getUserById(id);
+    }
+}
+```
+
+### 2. 服务监控
+
+```java
+@Component
+public class ServiceMonitor {
+    
+    private final MeterRegistry meterRegistry;
+    
+    @EventListener
+    public void handleServiceCall(ServiceCallEvent event) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            // 执行业务逻辑
+            event.execute();
+        } finally {
+            sample.stop(Timer.builder("service.call")
+                .tag("service", event.getServiceName())
+                .tag("method", event.getMethodName())
+                .register(meterRegistry));
+        }
+    }
+}
+```
+
+## 八、服务测试
+
+### 1. 契约测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestContainers
+class UserServiceContractTest {
+    
+    @Container
+    static GenericContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+            .withDatabaseName("test")
+            .withUsername("test")
+            .withPassword("test");
+    
+    @Test
+    void shouldReturnUserWhenValidId() {
+        // 契约测试逻辑
+    }
+}
+```
+
+### 2. 集成测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+class UserServiceIntegrationTest {
+    
+    @MockBean
+    private OrderServiceClient orderServiceClient;
+    
+    @Test
+    void shouldCreateUserAndOrder() {
+        // 集成测试逻辑
+    }
+}
+```
+
+## 九、部署与运维
+
+### 1. Docker 配置
+
+```dockerfile
+FROM openjdk:21-jre-slim
+COPY target/user-service.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+### 2. Kubernetes 配置
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+      - name: user-service
+        image: user-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+```
+
+---
+
+**适用场景**：大型微服务项目，团队规模 > 20人，业务复杂度高，需要独立部署和扩展的服务。

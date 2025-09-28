@@ -1,0 +1,498 @@
+---
+alwaysApply: false
+---
+# 高级架构规范
+
+- **目标**：高级架构模式的最佳实践和开发规范
+- **适用范围**：复杂业务场景的高级架构实现
+- **优先级**：可选遵循；仅在特定业务场景下适用
+- **前置条件**：项目复杂度高，有特定业务需求
+
+## 一、多租户架构规范
+
+### 1. 租户隔离策略
+
+* 数据隔离：支持共享数据库、共享 Schema、独立数据库三种模式；根据业务需求选择
+* 应用隔离：通过租户标识区分不同租户请求；确保数据不串户
+* 资源隔离：按租户分配计算和存储资源；支持弹性伸缩
+
+### 2. 数据隔离实现
+
+```java
+// 共享数据库模式
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    private Long id;
+    
+    @Column(name = "tenant_id")
+    private String tenantId;  // 租户标识
+    
+    private String name;
+    private String email;
+}
+
+// 数据访问层
+@Repository
+public class UserRepository {
+    
+    public List<User> findByTenantId(String tenantId) {
+        return userMapper.selectList(
+            new LambdaQueryWrapper<User>()
+                .eq(User::getTenantId, tenantId)
+        );
+    }
+}
+```
+
+### 3. 租户上下文管理
+
+```java
+@Component
+public class TenantContext {
+    
+    private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
+    
+    public static void setTenantId(String tenantId) {
+        TENANT_ID.set(tenantId);
+    }
+    
+    public static String getTenantId() {
+        return TENANT_ID.get();
+    }
+    
+    public static void clear() {
+        TENANT_ID.remove();
+    }
+}
+
+// 拦截器
+@Component
+public class TenantInterceptor implements HandlerInterceptor {
+    
+    @Override
+    public boolean preHandle(HttpServletRequest request, 
+                           HttpServletResponse response, 
+                           Object handler) {
+        String tenantId = request.getHeader("X-Tenant-Id");
+        if (tenantId != null) {
+            TenantContext.setTenantId(tenantId);
+        }
+        return true;
+    }
+    
+    @Override
+    public void afterCompletion(HttpServletRequest request, 
+                              HttpServletResponse response, 
+                              Object handler, 
+                              Exception ex) {
+        TenantContext.clear();
+    }
+}
+```
+
+### 4. 租户配置管理
+
+```java
+@ConfigurationProperties(prefix = "tenant")
+@Data
+public class TenantProperties {
+    
+    private Map<String, TenantConfig> configs = new HashMap<>();
+    
+    @Data
+    public static class TenantConfig {
+        private String databaseUrl;
+        private String redisUrl;
+        private Map<String, String> customProperties = new HashMap<>();
+    }
+}
+```
+
+## 二、消息队列规范
+
+### 1. 消息设计与序列化
+
+* 消息体使用 JSON 格式，包含：消息ID、时间戳、版本号、业务数据、元数据
+* 消息 ID 全局唯一，支持消息去重和幂等处理；时间戳使用 UTC 格式
+* 消息版本化：支持向后兼容的消息结构演进；废弃字段保留一段时间后移除
+
+```java
+@Data
+@Builder
+public class OrderMessage {
+    private String messageId;
+    private Instant timestamp;
+    private String version;
+    private OrderData data;
+    private Map<String, Object> metadata;
+    
+    @Data
+    @Builder
+    public static class OrderData {
+        private Long orderId;
+        private String orderStatus;
+        private BigDecimal amount;
+        private Long userId;
+    }
+}
+```
+
+### 2. 可靠性保障
+
+```java
+@Component
+public class OrderMessageProducer {
+    
+    private final RabbitTemplate rabbitTemplate;
+    
+    public void sendOrderCreated(OrderCreatedEvent event) {
+        OrderMessage message = OrderMessage.builder()
+            .messageId(UUID.randomUUID().toString())
+            .timestamp(Instant.now())
+            .version("1.0")
+            .data(OrderMessage.OrderData.builder()
+                .orderId(event.getOrderId())
+                .orderStatus(event.getStatus())
+                .amount(event.getAmount())
+                .userId(event.getUserId())
+                .build())
+            .build();
+        
+        rabbitTemplate.convertAndSend(
+            "order.exchange",
+            "order.created",
+            message,
+            msg -> {
+                msg.getMessageProperties().setMessageId(message.getMessageId());
+                msg.getMessageProperties().setTimestamp(Date.from(message.getTimestamp()));
+                return msg;
+            }
+        );
+    }
+}
+```
+
+### 3. 消费者实现
+
+```java
+@Component
+@RabbitListener(queues = "order.created.queue")
+public class OrderMessageConsumer {
+    
+    private final OrderService orderService;
+    
+    @RabbitHandler
+    public void handleOrderCreated(OrderMessage message) {
+        try {
+            // 幂等性检查
+            if (isDuplicate(message.getMessageId())) {
+                log.warn("Duplicate message received: {}", message.getMessageId());
+                return;
+            }
+            
+            // 处理业务逻辑
+            orderService.processOrderCreated(message.getData());
+            
+            // 记录处理成功
+            recordMessageProcessed(message.getMessageId());
+            
+        } catch (Exception e) {
+            log.error("Failed to process message: {}", message.getMessageId(), e);
+            throw new AmqpRejectAndDontRequeueException("Processing failed", e);
+        }
+    }
+}
+```
+
+### 4. 死信与重试
+
+```java
+@Configuration
+public class RabbitMQConfig {
+    
+    @Bean
+    public Queue orderQueue() {
+        return QueueBuilder.durable("order.created.queue")
+            .withArgument("x-dead-letter-exchange", "order.dlx")
+            .withArgument("x-dead-letter-routing-key", "order.failed")
+            .withArgument("x-message-ttl", 300000) // 5分钟
+            .build();
+    }
+    
+    @Bean
+    public Queue deadLetterQueue() {
+        return QueueBuilder.durable("order.dead.letter.queue").build();
+    }
+}
+```
+
+## 三、事件驱动架构
+
+### 1. 事件定义
+
+```java
+// 基础事件
+public abstract class DomainEvent {
+    private final String eventId;
+    private final Instant occurredOn;
+    private final String eventType;
+    
+    protected DomainEvent(String eventType) {
+        this.eventId = UUID.randomUUID().toString();
+        this.occurredOn = Instant.now();
+        this.eventType = eventType;
+    }
+}
+
+// 具体事件
+public class OrderCreatedEvent extends DomainEvent {
+    private final Long orderId;
+    private final Long userId;
+    private final BigDecimal amount;
+    
+    public OrderCreatedEvent(Long orderId, Long userId, BigDecimal amount) {
+        super("OrderCreated");
+        this.orderId = orderId;
+        this.userId = userId;
+        this.amount = amount;
+    }
+}
+```
+
+### 2. 事件发布
+
+```java
+@Service
+public class OrderService {
+    
+    private final ApplicationEventPublisher eventPublisher;
+    
+    @Transactional
+    public Order createOrder(CreateOrderRequest request) {
+        Order order = Order.builder()
+            .userId(request.getUserId())
+            .amount(request.getAmount())
+            .status(OrderStatus.CREATED)
+            .build();
+        
+        order = orderRepository.save(order);
+        
+        // 发布事件
+        eventPublisher.publishEvent(new OrderCreatedEvent(
+            order.getId(), 
+            order.getUserId(), 
+            order.getAmount()
+        ));
+        
+        return order;
+    }
+}
+```
+
+### 3. 事件处理
+
+```java
+@Component
+public class OrderEventHandler {
+    
+    private final InventoryService inventoryService;
+    private final PaymentService paymentService;
+    
+    @EventListener
+    @Async
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        // 预留库存
+        inventoryService.reserveInventory(event.getOrderId());
+        
+        // 处理支付
+        paymentService.processPayment(event.getOrderId(), event.getAmount());
+    }
+    
+    @EventListener
+    @Async
+    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+        // 确认订单
+        orderService.confirmOrder(event.getOrderId());
+    }
+}
+```
+
+## 四、CQRS 模式
+
+### 1. 命令端
+
+```java
+// 命令
+@Data
+public class CreateOrderCommand {
+    private Long userId;
+    private BigDecimal amount;
+    private List<OrderItem> items;
+}
+
+// 命令处理器
+@Component
+public class CreateOrderCommandHandler {
+    
+    @Transactional
+    public Order handle(CreateOrderCommand command) {
+        // 业务逻辑
+        Order order = Order.builder()
+            .userId(command.getUserId())
+            .amount(command.getAmount())
+            .items(command.getItems())
+            .build();
+        
+        return orderRepository.save(order);
+    }
+}
+```
+
+### 2. 查询端
+
+```java
+// 查询模型
+@Data
+public class OrderView {
+    private Long orderId;
+    private String orderStatus;
+    private BigDecimal totalAmount;
+    private String customerName;
+    private List<OrderItemView> items;
+}
+
+// 查询服务
+@Service
+public class OrderQueryService {
+    
+    public OrderView getOrderById(Long orderId) {
+        // 从读库查询
+        return orderViewRepository.findById(orderId);
+    }
+    
+    public List<OrderView> getOrdersByUserId(Long userId) {
+        return orderViewRepository.findByUserId(userId);
+    }
+}
+```
+
+## 五、领域驱动设计
+
+### 1. 聚合根
+
+```java
+@Entity
+public class Order {
+    @Id
+    private Long id;
+    
+    private Long userId;
+    private OrderStatus status;
+    private BigDecimal totalAmount;
+    
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderItem> items = new ArrayList<>();
+    
+    // 业务方法
+    public void addItem(OrderItem item) {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Cannot add items to order in status: " + status);
+        }
+        items.add(item);
+        recalculateTotal();
+    }
+    
+    public void confirm() {
+        if (status != OrderStatus.CREATED) {
+            throw new IllegalStateException("Cannot confirm order in status: " + status);
+        }
+        this.status = OrderStatus.CONFIRMED;
+    }
+    
+    private void recalculateTotal() {
+        this.totalAmount = items.stream()
+            .map(OrderItem::getSubTotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+}
+```
+
+### 2. 领域服务
+
+```java
+@Service
+public class OrderDomainService {
+    
+    public boolean canCreateOrder(Long userId, BigDecimal amount) {
+        // 检查用户信用
+        // 检查库存
+        // 其他业务规则
+        return true;
+    }
+    
+    public void validateOrder(Order order) {
+        if (order.getItems().isEmpty()) {
+            throw new DomainException("Order must have at least one item");
+        }
+        
+        if (order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new DomainException("Order total amount must be positive");
+        }
+    }
+}
+```
+
+## 六、性能优化
+
+### 1. 缓存策略
+
+```java
+@Service
+public class ProductService {
+    
+    @Cacheable(value = "products", key = "#id")
+    public Product getProductById(Long id) {
+        return productRepository.findById(id);
+    }
+    
+    @CacheEvict(value = "products", key = "#product.id")
+    public Product updateProduct(Product product) {
+        return productRepository.save(product);
+    }
+    
+    @Cacheable(value = "products", key = "#categoryId")
+    public List<Product> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId);
+    }
+}
+```
+
+### 2. 异步处理
+
+```java
+@Service
+public class NotificationService {
+    
+    @Async("notificationExecutor")
+    public CompletableFuture<Void> sendEmail(String to, String subject, String content) {
+        // 发送邮件
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    @Async("notificationExecutor")
+    public CompletableFuture<Void> sendSms(String phone, String message) {
+        // 发送短信
+        return CompletableFuture.completedFuture(null);
+    }
+}
+```
+
+---
+
+**适用场景**：
+- 多租户应用：SaaS 平台、多客户服务
+- 消息驱动应用：需要异步处理、系统解耦
+- 复杂业务应用：需要领域建模、事件驱动
+- 高性能应用：需要缓存优化、异步处理

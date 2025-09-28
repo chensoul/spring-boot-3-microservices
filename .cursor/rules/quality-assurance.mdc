@@ -1,0 +1,485 @@
+---
+alwaysApply: true
+---
+# 质量保证规范
+
+- **目标**：确保代码质量、测试覆盖率和系统稳定性的规范
+- **适用范围**：所有 Spring Boot 项目
+- **优先级**：强制遵循；代码评审与 CI 按此规则执行
+
+## 一、测试规范
+
+### 1. 测试分层
+
+* **单元测试**：测试单个组件，隔离依赖，使用 Mock
+* **集成测试**：测试组件间交互，使用真实依赖
+* **契约测试**：测试 API 契约，确保接口兼容性
+* **端到端测试**：测试完整业务流程
+
+### 2. 单元测试
+
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    @Test
+    void shouldReturnUserWhenValidId() {
+        // Given
+        Long userId = 1L;
+        User expectedUser = User.builder()
+            .id(userId)
+            .name("John Doe")
+            .email("john@example.com")
+            .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(expectedUser));
+
+        // When
+        User actualUser = userService.getUserById(userId);
+
+        // Then
+        assertThat(actualUser).isEqualTo(expectedUser);
+        verify(userRepository).findById(userId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUserNotFound() {
+        // Given
+        Long userId = 999L;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> userService.getUserById(userId))
+            .isInstanceOf(UserNotFoundException.class)
+            .hasMessage("User not found with id: " + userId);
+    }
+}
+```
+
+### 3. 集成测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestContainers
+class UserControllerIntegrationTest {
+
+    @Container
+    static GenericContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+            .withDatabaseName("test")
+            .withUsername("test")
+            .withPassword("test");
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Test
+    void shouldCreateUser() {
+        // Given
+        CreateUserRequest request = CreateUserRequest.builder()
+            .name("John Doe")
+            .email("john@example.com")
+            .build();
+
+        // When
+        ResponseEntity<User> response = restTemplate.postForEntity(
+            "/api/v1/users",
+            request,
+            User.class
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().getName()).isEqualTo("John Doe");
+
+        // 验证数据库
+        List<User> users = userRepository.findAll();
+        assertThat(users).hasSize(1);
+        assertThat(users.get(0).getName()).isEqualTo("John Doe");
+    }
+}
+```
+
+### 4. 契约测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class UserApiContractTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    void shouldReturnValidUserResponse() {
+        // Given
+        Long userId = 1L;
+
+        // When
+        ResponseEntity<User> response = restTemplate.getForEntity(
+            "/api/v1/users/" + userId,
+            User.class
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getId()).isEqualTo(userId);
+        assertThat(response.getBody().getName()).isNotBlank();
+        assertThat(response.getBody().getEmail()).isNotBlank();
+    }
+}
+```
+
+## 二、代码质量检查
+
+### 1. 静态代码分析
+
+* **SonarQube**：代码质量检查，检测代码坏味道
+* **Spotless**：代码格式化，统一代码风格
+* **Checkstyle**：代码风格检查
+* **PMD**：代码质量分析
+
+### 2. 代码覆盖率
+
+* **JaCoCo**：代码覆盖率分析
+* **覆盖率要求**：核心模块 80%+，边缘模块 60%+
+* **新增代码**：不得降低全局阈值
+
+```xml
+<!-- pom.xml -->
+<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.8</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>check</id>
+            <goals>
+                <goal>check</goal>
+            </goals>
+            <configuration>
+                <rules>
+                    <rule>
+                        <element>BUNDLE</element>
+                        <limits>
+                            <limit>
+                                <counter>LINE</counter>
+                                <value>COVEREDRATIO</value>
+                                <minimum>0.80</minimum>
+                            </limit>
+                        </limits>
+                    </rule>
+                </rules>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### 3. 代码格式化
+
+```xml
+<!-- pom.xml -->
+<plugin>
+    <groupId>com.diffplug.spotless</groupId>
+    <artifactId>spotless-maven-plugin</artifactId>
+    <version>2.40.0</version>
+    <configuration>
+        <java>
+            <googleJavaFormat>
+                <version>1.17.0</version>
+                <style>GOOGLE</style>
+            </googleJavaFormat>
+            <removeUnusedImports />
+            <formatAnnotations />
+        </java>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>apply</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+## 三、性能测试
+
+### 1. 性能基线
+
+* **关键接口**：具备基准压测报告（TP90/TP99、错误率、CPU/内存）
+* **上线前回归**：确保性能不退化
+* **监控告警**：设置性能阈值告警
+
+### 2. JMeter 测试
+
+```xml
+<!-- JMeter 测试计划 -->
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2">
+  <hashTree>
+    <TestPlan testname="User API Performance Test">
+      <elementProp name="TestPlan.arguments" elementType="Arguments" guiclass="ArgumentsPanel">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.arguments" elementType="Arguments" guiclass="ArgumentsPanel">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.user_define_classpath"></stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+    </TestPlan>
+  </hashTree>
+</jmeterTestPlan>
+```
+
+### 3. 性能监控
+
+```java
+@Component
+public class PerformanceMonitor {
+
+    private final MeterRegistry meterRegistry;
+    private final Timer.Sample sample;
+
+    @EventListener
+    public void handleRequest(RequestEvent event) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            // 处理请求
+            event.process();
+        } finally {
+            sample.stop(Timer.builder("http.request")
+                .tag("method", event.getMethod())
+                .tag("uri", event.getUri())
+                .register(meterRegistry));
+        }
+    }
+}
+```
+
+## 四、安全测试
+
+### 1. 依赖漏洞扫描
+
+```xml
+<!-- pom.xml -->
+<plugin>
+    <groupId>org.owasp</groupId>
+    <artifactId>dependency-check-maven</artifactId>
+    <version>8.4.0</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>check</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### 2. 安全测试
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class SecurityTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    void shouldRejectUnauthorizedRequest() {
+        // When
+        ResponseEntity<String> response = restTemplate.getForEntity(
+            "/api/v1/users",
+            String.class
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void shouldAcceptAuthorizedRequest() {
+        // Given
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("valid-token");
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        // When
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/api/v1/users",
+            HttpMethod.GET,
+            entity,
+            String.class
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+}
+```
+
+## 五、持续集成
+
+### 1. CI 流水线
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
+    - name: Run tests
+      run: mvn clean test
+
+    - name: Generate coverage report
+      run: mvn jacoco:report
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./target/site/jacoco/jacoco.xml
+```
+
+### 2. 质量门禁
+
+```yaml
+# 质量门禁配置
+quality-gates:
+  coverage:
+    minimum: 80
+  sonar:
+    quality-gate: pass
+  security:
+    vulnerabilities: 0
+  performance:
+    response-time: 200ms
+```
+
+## 六、监控与告警
+
+### 1. 应用监控
+
+```java
+@Configuration
+public class MonitoringConfig {
+
+    @Bean
+    public MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
+    }
+
+    @Bean
+    public TimedAspect timedAspect(MeterRegistry registry) {
+        return new TimedAspect(registry);
+    }
+}
+```
+
+### 2. 健康检查
+
+```java
+@Component
+public class CustomHealthIndicator implements HealthIndicator {
+
+    @Override
+    public Health health() {
+        // 检查外部依赖
+        boolean isHealthy = checkExternalDependencies();
+
+        if (isHealthy) {
+            return Health.up()
+                .withDetail("status", "All systems operational")
+                .build();
+        } else {
+            return Health.down()
+                .withDetail("status", "Some systems are down")
+                .build();
+        }
+    }
+}
+```
+
+## 七、文档要求
+
+### 1. API 文档
+
+* **OpenAPI**：使用 Swagger/OpenAPI 自动生成
+* **同步更新**：与代码同步更新
+* **示例数据**：提供完整的请求/响应示例
+
+```java
+@RestController
+@Api(tags = "用户管理")
+public class UserController {
+
+    @ApiOperation(value = "获取用户信息", notes = "根据用户ID获取用户详细信息")
+    @ApiResponses({
+        @ApiResponse(code = 200, message = "成功", response = User.class),
+        @ApiResponse(code = 404, message = "用户不存在"),
+        @ApiResponse(code = 500, message = "服务器内部错误")
+    })
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        // 实现逻辑
+    }
+}
+```
+
+### 2. 架构文档
+
+* **设计决策**：记录重要的架构决策
+* **定期更新**：保持文档与代码同步
+* **版本控制**：文档版本与代码版本对应
+
+---
+
+**适用场景**：所有 Spring Boot 项目，无论项目复杂度如何，都应遵循此质量保证规范。
