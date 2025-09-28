@@ -26,7 +26,7 @@ services:
       retries: 10
 
   mongodb:
-    image: mongo:8.0.5
+    image: mongo:8.0.14
     ports:
       - "27017:27017"
     environment:
